@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo=${titulo ?: 'Error'}, contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor" style="max-width:640px">
+        <div class="tarjeta centro">
+            <p style="font-size:3rem" aria-hidden="true">🧭</p>
+            <h1 th:text="${titulo ?: 'Algo salió mal'}">Algo salió mal</h1>
+            <p class="suave" th:text="${mensaje ?: 'No pudimos procesar tu pedido. Probá nuevamente en unos instantes.'}"></p>
+            <div class="fila" style="justify-content:center">
+                <a class="boton" href="/">Ir al inicio</a>
+                <a class="boton secundario" href="javascript:history.back()">Volver</a>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

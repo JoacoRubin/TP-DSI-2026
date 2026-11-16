@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Rankings', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor">
+        <h1>Ranking de donantes más activos</h1>
+        <p class="suave">Se calcula al cierre de cada mes por cantidad de misiones cumplidas (sin importar la categoría).</p>
+        <div class="grilla-2">
+            <section class="tarjeta" aria-labelledby="t-sel" th:if="${seleccionado != null}">
+                <h2 id="t-sel" th:text="'Ranking de ' + ${@fmt.mes(seleccionado.id)}"></h2>
+                <ol class="podio" style="list-style:none;padding:0" th:unless="${#lists.isEmpty(seleccionado.entradas)}">
+                    <li class="tarjeta puesto" th:each="p, i : ${seleccionado.entradas}" th:if="${i.index < 3}">
+                        <div class="medalla" aria-hidden="true" th:text="${i.index == 0 ? '🥇' : (i.index == 1 ? '🥈' : '🥉')}"></div>
+                        <strong th:text="${p.nombre}"></strong>
+                        <div class="chico suave" th:text="${p.misionesCumplidas} + ' misiones'"></div>
+                    </li>
+                </ol>
+                <div class="tabla-envoltura mt-4" th:unless="${#lists.isEmpty(seleccionado.entradas)}">
+                    <table>
+                        <thead><tr><th>#</th><th>Donante</th><th>Misiones cumplidas</th></tr></thead>
+                        <tbody><tr th:each="p : ${seleccionado.entradas}">
+                            <td th:text="${p.posicion}"></td><td th:text="${p.nombre}"></td><td th:text="${p.misionesCumplidas}"></td>
+                        </tr></tbody>
+                    </table>
+                </div>
+                <p class="vacio" th:if="${#lists.isEmpty(seleccionado.entradas)}">Nadie cumplió misiones en ese período.</p>
+            </section>
+            <div class="pila">
+                <section class="tarjeta" aria-labelledby="t-actual">
+                    <h2 id="t-actual">Mes en curso (en vivo)</h2>
+                    <ol class="mb-0" th:unless="${#lists.isEmpty(actual.entradas)}">
+                        <li th:each="p : ${actual.entradas}" th:text="${p.nombre} + ' — ' + ${p.misionesCumplidas}"></li>
+                    </ol>
+                    <p class="suave mb-0" th:if="${#lists.isEmpty(actual.entradas)}">Todavía sin misiones este mes.</p>
+                </section>
+                <section class="tarjeta" aria-labelledby="t-hist">
+                    <h2 id="t-hist">Historial</h2>
+                    <ul style="list-style:none;padding:0">
+                        <li th:each="r : ${historial}"><a th:href="@{/admin/rankings(periodo=${r.id})}" th:text="${@fmt.mes(r.id)}"></a></li>
+                    </ul>
+                    <p class="suave" th:if="${#lists.isEmpty(historial)}">Aún no se cerró ningún mes.</p>
+                    <form th:action="@{/admin/rankings/generacion}" method="post" class="mt-4">
+                        <div class="campo"><label for="periodo">Generar/recalcular un mes</label>
+                            <input id="periodo" name="periodo" type="month" required></div>
+                        <button class="boton secundario chico" type="submit">Generar ranking</button>
+                    </form>
+                </section>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

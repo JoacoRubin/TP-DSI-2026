@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Detalle de donación', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor">
+        <nav class="migas" aria-label="Ubicación"><a href="/donante/donaciones">Mis donaciones</a> › Detalle</nav>
+        <h1>Detalle de la donación</h1>
+        <div class="banner info" th:if="${entidad != null}">
+            Destino: <strong th:text="${entidad.razonSocial}"></strong> — <span th:text="${entidad.direccionFormateada}"></span>.
+            <a th:if="${donacion.estado == 'EN_TRASLADO'}" href="/donante/seguimiento">Seguir el camión en el mapa →</a>
+        </div>
+        <div th:replace="~{fragmentos/donacion :: detalle(${donacion})}"></div>
+    </div>
+</main>
+</body>
+</html>

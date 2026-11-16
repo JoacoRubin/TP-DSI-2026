@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Activar cuenta', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor" style="max-width:520px">
+        <div class="tarjeta">
+            <h1>Activá tu cuenta</h1>
+            <p class="suave">Elegí la contraseña con la que vas a ingresar a DonaTrack.</p>
+            <div class="banner error" th:if="${token == null or token.isBlank()}">
+                El enlace no es válido. Revisá el correo que te enviamos o pedí uno nuevo en el depósito.
+            </div>
+            <form th:action="@{/activar}" method="post" th:if="${token != null and !token.isBlank()}">
+                <input type="hidden" name="token" th:value="${token}">
+                <th:block th:replace="~{fragmentos/campos :: clave}"></th:block>
+                <button class="boton" type="submit" style="width:100%"><span class="spinner" aria-hidden="true"></span>Activar cuenta</button>
+            </form>
+        </div>
+    </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Términos y privacidad', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor pila" style="max-width:820px">
+        <h1>Términos de uso y política de privacidad</h1>
+        <p class="suave">Última actualización: noviembre de 2026.</p>
+
+        <section class="tarjeta">
+            <h2>1. Responsable de los datos</h2>
+            <p>UTN Solidaria (Subsecretaría de Asuntos Estudiantiles, UTN FRBA, Medrano 951, CABA) es responsable
+                de las bases de datos de DonaTrack, en los términos de la <strong>Ley 25.326 de Protección de Datos Personales</strong>.</p>
+        </section>
+        <section class="tarjeta">
+            <h2>2. Qué datos recolectamos y para qué</h2>
+            <ul>
+                <li><strong>Personas donantes:</strong> datos de identificación y contacto, para registrar sus donaciones,
+                    informarles su destino y enviarles notificaciones por el medio que elijan.</li>
+                <li><strong>Entidades beneficiarias:</strong> razón social, dirección y contactos, para planificar entregas.</li>
+                <li><strong>Choferes:</strong> ubicación del camión <em>sólo mientras la ruta está activa</em>.</li>
+            </ul>
+            <p class="mb-0">Las secciones públicas (galería y mapa) <strong>nunca</strong> muestran datos de las personas donantes.</p>
+        </section>
+        <section class="tarjeta">
+            <h2>3. Tus derechos</h2>
+            <p class="mb-0">Podés ejercer los derechos de acceso, rectificación, actualización y supresión (arts. 14 a 16 de la Ley 25.326)
+                escribiendo a <a href="mailto:privacidad@donatrack.org">privacidad@donatrack.org</a>. La Agencia de Acceso a la
+                Información Pública es el órgano de control.</p>
+        </section>
+        <section class="tarjeta">
+            <h2>4. Insignias y difusión</h2>
+            <p class="mb-0">Las insignias obtenidas pueden difundirse en redes sociales <strong>sólo si las configurás como visibles</strong>
+                en tu sección de Incentivos. Podés cambiar esta preferencia cuando quieras.</p>
+        </section>
+        <section class="tarjeta">
+            <h2>5. Seguridad</h2>
+            <p class="mb-0">Las contraseñas se almacenan con hash BCrypt, las sesiones viajan cifradas y el acceso a cada dato
+                está restringido según el rol de la cuenta.</p>
+        </section>
+    </div>
+</main>
+</body>
+</html>

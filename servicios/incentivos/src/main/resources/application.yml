@@ -1,0 +1,57 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: incentivos
+  profiles:
+    default: local
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+  artemis:
+    mode: native
+    broker-url: tcp://localhost:61616
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AUTH_URL:http://localhost:8085}/.well-known/jwks.json
+
+donatrack:
+  incentivos:
+    # URL del webhook de n8n (flujo de difusión de insignias). Vacío = deshabilitado (sólo log).
+    webhook-n8n: ${N8N_WEBHOOK_URL:}
+  cron:
+    # Cierre de mes: día 1 a las 00:10 se persiste el ranking del mes anterior
+    ranking: "0 10 0 1 * *"
+
+management:
+  health:
+    jms:
+      enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:h2:file:./data/incentivos/db;MODE=PostgreSQL
+    username: sa
+    password:
+
+---
+spring:
+  config:
+    activate:
+      on-profile: postgres
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/donatrack_incentivos}
+    username: ${DB_USER:donatrack}
+    password: ${DB_PASSWORD:donatrack}

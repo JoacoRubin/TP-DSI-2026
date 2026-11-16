@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Elegir entidad beneficiaria', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor">
+        <nav class="migas" aria-label="Ubicación"><a href="/admin/asignaciones">Asignaciones</a> › Elegir destino</nav>
+        <div class="fila-entre">
+            <div>
+                <h1 class="mb-0" th:text="${detalle.descripcion}"></h1>
+                <p class="suave" th:if="${detalle.ejecutadoEn != null}" th:text="'Ranking calculado el ' + ${@fmt.fechaHora(detalle.ejecutadoEn)}"></p>
+            </div>
+            <form th:action="@{/admin/asignaciones/{id}/evaluacion(id=${detalle.donacionId})}" method="post" class="mb-0">
+                <button class="boton secundario" type="submit"><span class="spinner" aria-hidden="true"></span>↻ Recalcular ranking</button>
+            </form>
+        </div>
+
+        <div class="banner aviso" th:if="${detalle.ejecutadoEn == null}">
+            Todavía no se ejecutaron los algoritmos para esta donación. Usá <strong>Recalcular ranking</strong>.
+        </div>
+
+        <!-- Coincidencias: necesidades presentes en el top 10 de AMBOS algoritmos -->
+        <section th:if="${!#lists.isEmpty(detalle.coincidencias)}" aria-labelledby="t-coinc">
+            <h2 id="t-coinc">✨ Coincidencias de ambos algoritmos</h2>
+            <p class="suave">Necesidades que aparecen en el top 10 de los dos algoritmos, ordenadas por puntaje promedio.</p>
+            <div th:replace="~{fragmentos/propuestas :: tabla(${detalle.coincidencias}, ${detalle.donacionId}, 'Puntaje promedio')}"></div>
+        </section>
+
+        <div class="banner info mt-5" th:if="${#lists.isEmpty(detalle.coincidencias) and detalle.ejecutadoEn != null}">
+            No hubo coincidencias entre los algoritmos: elegí desde cualquiera de los rankings.
+        </div>
+
+        <h2 class="mt-5" th:if="${detalle.ejecutadoEn != null}">Rankings por algoritmo (top 10)</h2>
+        <div class="grilla" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr))" th:if="${detalle.ejecutadoEn != null}">
+            <section th:each="r : ${detalle.rankings}" th:attr="aria-label=${r.algoritmo}">
+                <h3 th:text="${r.algoritmo}"></h3>
+                <div th:replace="~{fragmentos/propuestas :: tabla(${r.propuestas}, ${detalle.donacionId}, 'Puntaje')}"></div>
+                <p class="vacio tarjeta" th:if="${#lists.isEmpty(r.propuestas)}">Ninguna necesidad compatible con esta subcategoría.</p>
+            </section>
+        </div>
+    </div>
+</main>
+</body>
+</html>

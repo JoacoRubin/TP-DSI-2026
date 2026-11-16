@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Camiones', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor">
+        <h1>Flota de camiones</h1>
+        <div class="grilla-2">
+            <section aria-labelledby="t-flota">
+                <h2 id="t-flota" class="sr-only">Camiones registrados</h2>
+                <div class="pila">
+                    <form class="tarjeta" th:each="c : ${camiones}" th:action="@{/admin/camiones/{id}(id=${c.id})}" method="post">
+                        <div class="fila-entre">
+                            <h3 class="mb-0">🚚 <span th:text="${c.patente}"></span></h3>
+                            <span class="estado" th:classappend="${c.activo ? 'exito' : 'neutro'}" th:text="${c.activo ? 'Activo' : 'Fuera de servicio'}"></span>
+                        </div>
+                        <input type="hidden" name="patente" th:value="${c.patente}">
+                        <div class="campos mt-4">
+                            <div class="campo"><label th:for="'v-' + ${c.id}">Volumen (m³)</label>
+                                <input th:id="'v-' + ${c.id}" name="volumenM3" type="number" step="0.1" min="0.1" th:value="${c.volumenM3}" required></div>
+                            <div class="campo"><label th:for="'a-' + ${c.id}">Altura (m)</label>
+                                <input th:id="'a-' + ${c.id}" name="alturaM" type="number" step="0.1" min="0.1" th:value="${c.alturaM}" required></div>
+                            <div class="campo"><label th:for="'k-' + ${c.id}">Carga (kg)</label>
+                                <input th:id="'k-' + ${c.id}" name="cargaKg" type="number" step="1" min="1" th:value="${c.cargaKg}" required></div>
+                        </div>
+                        <div class="fila-entre">
+                            <label class="check"><input type="checkbox" name="activo" th:checked="${c.activo}"> Disponible para rutas</label>
+                            <button class="boton chico secundario" type="submit">Guardar cambios</button>
+                        </div>
+                    </form>
+                    <p class="vacio tarjeta" th:if="${#lists.isEmpty(camiones)}">No hay camiones registrados.</p>
+                </div>
+            </section>
+            <section class="tarjeta" aria-labelledby="t-nuevo">
+                <h2 id="t-nuevo">Nuevo camión</h2>
+                <form th:action="@{/admin/camiones}" method="post">
+                    <div class="campo"><label for="patente" class="obligatorio">Patente</label>
+                        <input id="patente" name="patente" required placeholder="AB123CD" pattern="[A-Za-z]{2,3}\s?\d{3}\s?([A-Za-z]{2})?" aria-describedby="patente-ayuda">
+                        <span id="patente-ayuda" class="ayuda">Formatos ABC123 o AB123CD.</span></div>
+                    <div class="campo"><label for="volumenM3" class="obligatorio">Capacidad en volumen (m³)</label>
+                        <input id="volumenM3" name="volumenM3" type="number" step="0.1" min="0.1" required></div>
+                    <div class="campo"><label for="alturaM" class="obligatorio">Altura (m)</label>
+                        <input id="alturaM" name="alturaM" type="number" step="0.1" min="0.1" required></div>
+                    <div class="campo"><label for="cargaKg" class="obligatorio">Capacidad de carga (kg)</label>
+                        <input id="cargaKg" name="cargaKg" type="number" step="1" min="1" required></div>
+                    <input type="hidden" name="activo" value="on">
+                    <button class="boton" type="submit" style="width:100%">Registrar camión</button>
+                </form>
+            </section>
+        </div>
+    </div>
+</main>
+</body>
+</html>

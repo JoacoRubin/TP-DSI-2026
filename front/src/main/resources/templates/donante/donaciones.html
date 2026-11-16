@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Mis donaciones', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor">
+        <h1>Mis donaciones</h1>
+        <th:block th:replace="~{fragmentos/filtros :: donaciones('/donante/donaciones', ${filtro}, ${categorias}, true)}"></th:block>
+
+        <p class="mt-4 suave" aria-live="polite" th:text="${resultado.total} + ' donaciones encontradas'"></p>
+        <div class="tabla-envoltura" th:unless="${#lists.isEmpty(resultado.elementos)}">
+            <table class="apilable">
+                <caption class="sr-only">Listado de mis donaciones</caption>
+                <thead><tr><th>Donación</th><th>Categoría</th><th>Ingreso</th><th>Estado</th><th><span class="sr-only">Acciones</span></th></tr></thead>
+                <tbody>
+                <tr th:each="d : ${resultado.elementos}">
+                    <td data-etiqueta="Donación"><strong th:text="${d.descripcionCorta}"></strong>
+                        <div class="chico suave" th:if="${d.fechaVencimiento != null}" th:text="'Vence: ' + ${@fmt.fecha(d.fechaVencimiento)}"></div></td>
+                    <td data-etiqueta="Categoría" th:text="${d.categoria}"></td>
+                    <td data-etiqueta="Ingreso" th:text="${@fmt.fecha(d.registradaEn)}"></td>
+                    <td data-etiqueta="Estado"><span class="estado" th:classappend="${@fmt.claseEstado(d.estado)}" th:text="${d.estadoEtiqueta}"></span></td>
+                    <td><a class="boton chico secundario" th:href="@{/donante/donaciones/{id}(id=${d.id})}">Detalle</a></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="vacio tarjeta" th:if="${#lists.isEmpty(resultado.elementos)}">No hay donaciones con esos filtros.</p>
+        <nav th:replace="~{fragmentos/layout :: paginacion(${resultado},
+            '/donante/donaciones?estado=' + ${filtro.estado} + '&categoria=' + ${filtro.categoria} + '&subcategoriaId=' + ${filtro.subcategoriaId} + '&')}"></nav>
+    </div>
+</main>
+</body>
+</html>

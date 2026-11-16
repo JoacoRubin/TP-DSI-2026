@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Filtros por estado y categoría/subcategoría (requerimiento 5) -->
+<form th:fragment="donaciones(accion, filtro, categorias, conSubcategoria)" th:action="${accion}" method="get"
+      class="tarjeta" role="search" aria-label="Filtrar donaciones">
+    <div class="campos">
+        <div class="campo">
+            <label for="f-estado">Estado</label>
+            <select id="f-estado" name="estado">
+                <option value="">Todos</option>
+                <option th:each="e : ${ {'EN_DEPOSITO','ASIGNADA','LISTA_PARA_ENTREGAR','EN_TRASLADO','ENTREGADA','ENTREGA_FALLIDA','VENCIDA'} }"
+                        th:value="${e}" th:text="${@fmt.estado(e)}" th:selected="${filtro.estado == e}"></option>
+            </select>
+        </div>
+        <div class="campo">
+            <label for="f-categoria">Categoría</label>
+            <select id="f-categoria" name="categoria">
+                <option value="">Todas</option>
+                <option th:each="c : ${categorias}" th:value="${c.nombre}" th:text="${c.nombre}"
+                        th:selected="${filtro.categoria == c.nombre}"></option>
+            </select>
+        </div>
+        <div class="campo" th:if="${conSubcategoria}">
+            <label for="f-sub">Subcategoría</label>
+            <select id="f-sub" name="subcategoriaId">
+                <option value="">Todas</option>
+                <optgroup th:each="c : ${categorias}" th:label="${c.nombre}">
+                    <option th:each="s : ${c.subcategorias}" th:value="${s.id}" th:text="${s.nombre}"
+                            th:selected="${filtro.subcategoriaId == s.id.toString()}"></option>
+                </optgroup>
+            </select>
+        </div>
+    </div>
+    <div class="acciones mt-0">
+        <a class="boton fantasma chico" th:href="${accion}">Limpiar</a>
+        <button class="boton chico" type="submit">Filtrar</button>
+    </div>
+</form>
+</body>
+</html>

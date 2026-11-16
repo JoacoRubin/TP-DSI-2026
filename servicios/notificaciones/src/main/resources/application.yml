@@ -1,0 +1,68 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: notificaciones
+  profiles:
+    default: local
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+  artemis:
+    mode: native
+    broker-url: tcp://localhost:61616
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8085/.well-known/jwks.json
+  # Sólo se usa si donatrack.notificaciones.email-modo=smtp
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USER:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
+donatrack:
+  notificaciones:
+    email-modo: ${EMAIL_MODO:simulado}
+    remitente: ${EMAIL_REMITENTE:no-responder@donatrack.org}
+    twilio-modo: ${TWILIO_MODO:simulado}
+    twilio-account-sid: ${TWILIO_ACCOUNT_SID:}
+    twilio-auth-token: ${TWILIO_AUTH_TOKEN:}
+    twilio-numero-sms: ${TWILIO_NUMERO_SMS:}
+    twilio-numero-whatsapp: ${TWILIO_NUMERO_WHATSAPP:+14155238886}
+
+management:
+  health:
+    mail:
+      enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:h2:file:./data/notificaciones/db;MODE=PostgreSQL
+    username: sa
+    password:
+
+---
+spring:
+  config:
+    activate:
+      on-profile: postgres
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/donatrack_notificaciones}
+    username: ${DB_USER:donatrack}
+    password: ${DB_PASSWORD:donatrack}

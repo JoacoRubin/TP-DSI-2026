@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Donantes', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor">
+        <div class="fila-entre">
+            <h1 class="mb-0">Personas donantes</h1>
+            <div class="fila">
+                <a class="boton" href="/admin/donantes/nuevo?tipo=humana">➕ Persona humana</a>
+                <a class="boton secundario" href="/admin/donantes/nuevo?tipo=juridica">➕ Persona jurídica</a>
+            </div>
+        </div>
+        <form action="/admin/donantes" method="get" class="fila mt-5" role="search">
+            <label for="texto" class="sr-only">Buscar donantes</label>
+            <input id="texto" name="texto" th:value="${texto}" placeholder="Nombre, email o documento…" style="max-width:420px">
+            <button class="boton" type="submit">Buscar</button>
+        </form>
+        <p class="suave mt-4" th:text="${resultado.total} + ' donantes'"></p>
+        <div class="tabla-envoltura">
+            <table class="apilable">
+                <thead><tr><th>Nombre</th><th>Tipo</th><th>Documento</th><th>Email</th><th>Estado</th><th><span class="sr-only">Acciones</span></th></tr></thead>
+                <tbody>
+                <tr th:each="d : ${resultado.elementos}">
+                    <td data-etiqueta="Nombre"><strong th:text="${d.nombreVisible}"></strong></td>
+                    <td data-etiqueta="Tipo" th:text="${d.tipo == 'HUMANA' ? 'Humana' : 'Jurídica'}"></td>
+                    <td data-etiqueta="Documento" th:text="${d.tipoDocumento} + ' ' + ${d.numeroDocumento}"></td>
+                    <td data-etiqueta="Email" th:text="${d.email}"></td>
+                    <td data-etiqueta="Estado"><span class="estado" th:classappend="${d.activo ? 'exito' : 'neutro'}" th:text="${d.activo ? 'Activo' : 'Baja'}"></span></td>
+                    <td>
+                        <div class="fila">
+                            <a class="boton chico" th:href="@{/admin/donaciones/nueva(donanteId=${d.id})}">Registrar donación</a>
+                            <form th:if="${d.activo}" th:action="@{/admin/donantes/{id}/baja(id=${d.id})}" method="post" class="mb-0"
+                                  data-confirmar="El donante quedará dado de baja (su historial se conserva).">
+                                <button class="boton chico fantasma" type="submit">Dar de baja</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <nav th:replace="~{fragmentos/layout :: paginacion(${resultado}, '/admin/donantes?texto=' + ${texto ?: ''} + '&')}"></nav>
+    </div>
+</main>
+</body>
+</html>

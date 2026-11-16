@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Entidades beneficiarias', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor">
+        <h1>Entidades beneficiarias</h1>
+        <form action="/donante/entidades" method="get" class="fila" role="search">
+            <label for="texto" class="sr-only">Buscar entidad</label>
+            <input id="texto" name="texto" th:value="${texto}" placeholder="Buscar por nombre…" style="max-width:420px">
+            <button class="boton" type="submit">Buscar</button>
+        </form>
+        <div class="grilla mt-5">
+            <a class="tarjeta tarjeta-enlace" th:each="e : ${entidades}" th:href="@{/donante/entidades/{id}(id=${e.id})}">
+                <h2 th:text="${e.razonSocial}"></h2>
+                <p class="suave mb-0" th:text="${e.direccionFormateada}"></p>
+            </a>
+        </div>
+        <p class="vacio" th:if="${#lists.isEmpty(entidades)}">No encontramos entidades.</p>
+    </div>
+</main>
+</body>
+</html>

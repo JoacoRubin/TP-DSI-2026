@@ -1,0 +1,58 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: autenticacion
+  profiles:
+    default: local
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+  artemis:
+    mode: native
+    broker-url: tcp://localhost:61616
+
+donatrack:
+  autenticacion:
+    directorio-claves: ./data/autenticacion/claves
+    vigencia-token-usuario: 8h
+    vigencia-token-servicio: 15m
+    # En producción vienen de variables de entorno / gestor de secretos.
+    clientes-servicio:
+      donaciones: ${SECRETO_DONACIONES:secreto-donaciones-local}
+      logistica: ${SECRETO_LOGISTICA:secreto-logistica-local}
+      incentivos: ${SECRETO_INCENTIVOS:secreto-incentivos-local}
+
+management:
+  health:
+    jms:
+      enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:h2:file:./data/autenticacion/db;MODE=PostgreSQL
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: postgres
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/donatrack_autenticacion}
+    username: ${DB_USER:donatrack}
+    password: ${DB_PASSWORD:donatrack}

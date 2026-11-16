@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Dirección postal (opcionalmente con selector de ubicación en el mapa) -->
+<fieldset th:fragment="direccion(form, conMapa)">
+    <legend>Dirección</legend>
+    <div class="campos">
+        <div class="campo">
+            <label for="calle" class="obligatorio">Calle</label>
+            <input id="calle" name="calle" th:value="${form['calle']}" required autocomplete="address-line1" placeholder="Ej.: Medrano">
+        </div>
+        <div class="campo">
+            <label for="altura">Altura</label>
+            <input id="altura" name="altura" th:value="${form['altura']}" inputmode="numeric" placeholder="Ej.: 951">
+        </div>
+        <div class="campo">
+            <label for="localidad" class="obligatorio">Localidad</label>
+            <input id="localidad" name="localidad" th:value="${form['localidad']}" required autocomplete="address-level2" placeholder="Ej.: CABA">
+        </div>
+        <div class="campo">
+            <label for="provincia">Provincia</label>
+            <input id="provincia" name="provincia" th:value="${form['provincia'] ?: 'Buenos Aires'}" autocomplete="address-level1">
+        </div>
+        <div class="campo">
+            <label for="codigoPostal">Código postal</label>
+            <input id="codigoPostal" name="codigoPostal" th:value="${form['codigoPostal']}" autocomplete="postal-code">
+        </div>
+    </div>
+    <th:block th:if="${conMapa}">
+        <p class="etiqueta-campo obligatorio" id="ubicacion-ayuda">Ubicación en el mapa</p>
+        <p class="ayuda suave chico">Hacé clic en el mapa sobre la puerta de la entidad (podés arrastrar el marcador).
+            La usamos para planificar el recorrido de los camiones.</p>
+        <div id="selector" class="mapa" style="height:320px" role="application" aria-describedby="ubicacion-ayuda"></div>
+        <p id="selector-estado" class="chico suave" aria-live="polite">Todavía no seleccionaste la ubicación.</p>
+        <input type="hidden" id="latitud" name="latitud" th:value="${form['latitud']}">
+        <input type="hidden" id="longitud" name="longitud" th:value="${form['longitud']}">
+    </th:block>
+</fieldset>
+
+<!-- Medios de contacto y preferencia de notificación -->
+<fieldset th:fragment="contacto(form)">
+    <legend>Contacto</legend>
+    <div class="campos">
+        <div class="campo">
+            <label for="email" class="obligatorio">Correo electrónico</label>
+            <input id="email" name="email" type="email" th:value="${form['email']}" required autocomplete="email" placeholder="nombre@correo.com"
+                   aria-describedby="email-ayuda">
+            <span id="email-ayuda" class="ayuda">Será tu usuario para ingresar.</span>
+        </div>
+        <div class="campo">
+            <label for="telefono">Teléfono</label>
+            <input id="telefono" name="telefono" type="tel" th:value="${form['telefono']}" autocomplete="tel" placeholder="+54 11 5555-5555">
+        </div>
+        <div class="campo">
+            <label for="whatsapp">WhatsApp</label>
+            <input id="whatsapp" name="whatsapp" type="tel" th:value="${form['whatsapp']}" placeholder="+54 9 11 5555-5555">
+        </div>
+        <div class="campo">
+            <label for="medioPreferido">¿Cómo preferís recibir avisos?</label>
+            <select id="medioPreferido" name="medioPreferido" aria-describedby="medio-ayuda">
+                <option value="EMAIL" th:selected="${form['medioPreferido'] == 'EMAIL'}">Correo electrónico</option>
+                <option value="WHATSAPP" th:selected="${form['medioPreferido'] == 'WHATSAPP'}">WhatsApp</option>
+                <option value="SMS" th:selected="${form['medioPreferido'] == 'SMS'}">SMS</option>
+            </select>
+            <span id="medio-ayuda" class="ayuda">Si elegís WhatsApp o SMS, completá ese número.</span>
+        </div>
+    </div>
+</fieldset>
+
+<!-- Contraseña con confirmación -->
+<fieldset th:fragment="clave">
+    <legend>Contraseña</legend>
+    <div class="campos">
+        <div class="campo">
+            <label for="clave" class="obligatorio">Contraseña</label>
+            <input id="clave" name="clave" type="password" required minlength="8" autocomplete="new-password" aria-describedby="clave-ayuda">
+            <span id="clave-ayuda" class="ayuda">Mínimo 8 caracteres, con letras y números.</span>
+        </div>
+        <div class="campo">
+            <label for="confirmacion" class="obligatorio">Repetí la contraseña</label>
+            <input id="confirmacion" name="confirmacion" type="password" required minlength="8" autocomplete="new-password">
+        </div>
+    </div>
+</fieldset>
+
+<label th:fragment="terminos" class="check">
+    <input type="checkbox" name="terminos" required>
+    <span>Leí y acepto los <a href="/legal" target="_blank" rel="noopener">términos y la política de privacidad</a>.</span>
+</label>
+
+<!-- Datos de persona humana -->
+<fieldset th:fragment="personaHumana(form)">
+    <legend>Datos personales</legend>
+    <div class="campos">
+        <div class="campo">
+            <label for="nombre" class="obligatorio">Nombre</label>
+            <input id="nombre" name="nombre" th:value="${form['nombre']}" required autocomplete="given-name">
+        </div>
+        <div class="campo">
+            <label for="apellido" class="obligatorio">Apellido</label>
+            <input id="apellido" name="apellido" th:value="${form['apellido']}" required autocomplete="family-name">
+        </div>
+        <div class="campo">
+            <label for="edad" class="obligatorio">Edad</label>
+            <input id="edad" name="edad" type="number" min="0" max="120" th:value="${form['edad']}" required inputmode="numeric">
+        </div>
+        <div class="campo">
+            <label for="genero" class="obligatorio">Género</label>
+            <select id="genero" name="genero" required>
+                <option value="">Elegí una opción</option>
+                <option value="FEMENINO" th:selected="${form['genero'] == 'FEMENINO'}">Femenino</option>
+                <option value="MASCULINO" th:selected="${form['genero'] == 'MASCULINO'}">Masculino</option>
+                <option value="NO_BINARIO" th:selected="${form['genero'] == 'NO_BINARIO'}">No binario</option>
+                <option value="OTRO" th:selected="${form['genero'] == 'OTRO'}">Otro</option>
+                <option value="PREFIERE_NO_DECIR" th:selected="${form['genero'] == 'PREFIERE_NO_DECIR'}">Prefiero no decirlo</option>
+            </select>
+        </div>
+        <div class="campo">
+            <label for="tipoDocumento" class="obligatorio">Tipo de documento</label>
+            <select id="tipoDocumento" name="tipoDocumento" required>
+                <option value="DNI" th:selected="${form['tipoDocumento'] == 'DNI'}">DNI</option>
+                <option value="PASAPORTE" th:selected="${form['tipoDocumento'] == 'PASAPORTE'}">Pasaporte</option>
+                <option value="LE" th:selected="${form['tipoDocumento'] == 'LE'}">LE</option>
+                <option value="LC" th:selected="${form['tipoDocumento'] == 'LC'}">LC</option>
+            </select>
+        </div>
+        <div class="campo">
+            <label for="numeroDocumento" class="obligatorio">Número de documento</label>
+            <input id="numeroDocumento" name="numeroDocumento" th:value="${form['numeroDocumento']}" required inputmode="numeric" placeholder="Sin puntos">
+        </div>
+    </div>
+</fieldset>
+
+<!-- Datos de persona jurídica -->
+<fieldset th:fragment="personaJuridica(form)">
+    <legend>Datos de la organización</legend>
+    <div class="campos">
+        <div class="campo">
+            <label for="razonSocial" class="obligatorio">Razón social</label>
+            <input id="razonSocial" name="razonSocial" th:value="${form['razonSocial']}" required autocomplete="organization">
+        </div>
+        <div class="campo">
+            <label for="cuit" class="obligatorio">CUIT</label>
+            <input id="cuit" name="cuit" th:value="${form['cuit']}" required placeholder="30-12345678-9" pattern="[0-9\-]{11,13}">
+        </div>
+        <div class="campo">
+            <label for="tipo" class="obligatorio">Tipo</label>
+            <select id="tipo" name="tipo" required>
+                <option value="EMPRESA" th:selected="${form['tipo'] == 'EMPRESA'}">Empresa</option>
+                <option value="ONG" th:selected="${form['tipo'] == 'ONG'}">ONG</option>
+                <option value="INSTITUCION" th:selected="${form['tipo'] == 'INSTITUCION'}">Institución</option>
+                <option value="GUBERNAMENTAL" th:selected="${form['tipo'] == 'GUBERNAMENTAL'}">Gubernamental</option>
+            </select>
+        </div>
+        <div class="campo">
+            <label for="rubro" class="obligatorio">Rubro</label>
+            <input id="rubro" name="rubro" th:value="${form['rubro']}" required placeholder="Ej.: Gastronomía">
+        </div>
+        <div class="campo">
+            <label for="representanteNombre">Representante</label>
+            <input id="representanteNombre" name="representanteNombre" th:value="${form['representanteNombre']}" placeholder="Nombre y apellido">
+        </div>
+        <div class="campo">
+            <label for="representanteEmail">Email del representante</label>
+            <input id="representanteEmail" name="representanteEmail" type="email" th:value="${form['representanteEmail']}">
+        </div>
+    </div>
+</fieldset>
+
+<!-- Datos de entidad beneficiaria -->
+<fieldset th:fragment="entidad(form)">
+    <legend>Datos de la entidad</legend>
+    <div class="campos">
+        <div class="campo">
+            <label for="razonSocialEntidad" class="obligatorio">Razón social</label>
+            <input id="razonSocialEntidad" name="razonSocial" th:value="${form['razonSocial']}" required placeholder="Ej.: Escuela Rural N°10">
+        </div>
+        <div class="campo">
+            <label for="telefonoEntidad" class="obligatorio">Teléfono</label>
+            <input id="telefonoEntidad" name="telefono" type="tel" th:value="${form['telefono']}" required>
+        </div>
+        <div class="campo">
+            <label for="emails" class="obligatorio">Correos de representantes</label>
+            <input id="emails" name="emails" th:value="${form['emails']}" required aria-describedby="emails-ayuda"
+                   placeholder="direccion@escuela.edu.ar, cooperadora@escuela.edu.ar">
+            <span id="emails-ayuda" class="ayuda">Separados por coma. El primero será el usuario de acceso.</span>
+        </div>
+    </div>
+</fieldset>
+</body>
+</html>

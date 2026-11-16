@@ -1,0 +1,88 @@
+@startuml despliegue
+title DonaTrack — Diagrama de despliegue (entorno local / desarrollo)
+skinparam componentStyle rectangle
+skinparam nodesep 40
+skinparam ranksep 50
+
+actor "Persona donante\nEntidad beneficiaria\nAdministración" as usuario
+actor "Chofer\n(app móvil)" as chofer
+
+node "Navegador" as nav {
+  artifact "HTML + CSS + JS\n(Leaflet)" as html
+}
+
+node "JVM :8080" as nfront {
+  component "front\n(Spring MVC + Thymeleaf)\nBFF / SSR" as front
+}
+
+node "JVM :8085" as nauth {
+  component "servicio-autenticacion" as auth
+  database "H2 autenticacion" as dbauth
+}
+node "JVM :8081" as ndon {
+  component "servicio-donaciones" as don
+  database "H2 donaciones" as dbdon
+  folder "fotos de bienes" as fdon
+}
+node "JVM :8082" as nlog {
+  component "servicio-logistica" as log
+  database "MongoDB 7 (embebido)" as mongo
+  folder "fotos de entregas" as flog
+}
+node "JVM :8083" as ninc {
+  component "servicio-incentivos" as inc
+  database "H2 incentivos" as dbinc
+}
+node "JVM :8084" as nnot {
+  component "servicio-notificaciones" as notif
+  database "H2 notificaciones" as dbnot
+}
+node "JVM :61616 / :8161" as nbroker {
+  queue "Artemis (JMS)\nnotificaciones.solicitudes\ndonaciones.eventos-logistica\nincentivos.eventos-donaciones" as broker
+}
+
+cloud "Externos" {
+  component "Planificador de rutas\n(simulado :8090)" as plan
+  component "SMTP / Twilio\n(SMS, WhatsApp)" as prov
+  component "n8n (webhook)\n→ red social" as n8n
+  component "OpenStreetMap tiles" as osm
+}
+
+usuario --> nav
+chofer --> nav
+nav --> front : HTTPS (sesión + CSRF)
+nav ..> osm : tiles del mapa
+
+front --> auth : REST /api/auth/login
+front --> don : REST + JWT
+front --> log : REST + JWT
+front --> inc : REST + JWT
+front --> notif : REST + JWT
+
+don --> auth : REST (token de servicio)\nalta de cuentas
+don --> log : REST (token de servicio)\nsolicitar / cancelar entrega
+don ..> auth : JWKS (validación JWT)
+log ..> auth : JWKS
+inc ..> auth : JWKS
+notif ..> auth : JWKS
+
+don --> broker : publica eventos\ny solicitudes de notificación
+log --> broker : publica eventos
+inc --> broker : publica notificaciones
+broker --> don : eventos de logística
+broker --> inc : eventos de donaciones
+broker --> notif : solicitudes
+
+log --> plan : POST lote (≤100)
+plan --> log : callback (X-Callback-Token)
+notif --> prov
+inc --> n8n
+
+auth --> dbauth
+don --> dbdon
+don --> fdon
+log --> mongo
+log --> flog
+inc --> dbinc
+notif --> dbnot
+@enduml

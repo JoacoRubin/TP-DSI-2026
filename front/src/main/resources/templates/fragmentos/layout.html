@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es-AR" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:fragment="pagina(titulo, contenido)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="DonaTrack: gestión y trazabilidad de donaciones de UTN Solidaria.">
+    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}">
+    <title th:text="${titulo} + ' · DonaTrack'">DonaTrack</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/css/donatrack.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido principal</a>
+
+<header class="barra">
+    <div class="contenedor">
+        <a class="marca" href="/" aria-label="DonaTrack, ir al inicio">
+            <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#0f766e"/><path d="M32 50s-16-9.5-16-21a9 9 0 0 1 16-5.6A9 9 0 0 1 48 29c0 11.5-16 21-16 21z" fill="#fff"/></svg>
+            DonaTrack
+        </a>
+        <button class="boton fantasma menu-boton" type="button" aria-controls="navegacion" aria-expanded="false">
+            <span aria-hidden="true">☰</span> Menú
+        </button>
+        <nav id="navegacion" class="nav" aria-label="Navegación principal">
+            <ul>
+                <th:block sec:authorize="isAnonymous()">
+                    <li><a href="/galeria">Galería</a></li>
+                    <li><a href="/mapa">Mapa de entregas</a></li>
+                    <li><a href="/registro">Registrarme</a></li>
+                    <li><a class="boton chico" href="/login" style="color:#fff">Ingresar</a></li>
+                </th:block>
+
+                <th:block sec:authorize="hasRole('DONANTE')">
+                    <li><a href="/donante/donaciones">Mis donaciones</a></li>
+                    <li><a href="/donante/entidades">Entidades</a></li>
+                    <li><a href="/donante/seguimiento">Seguimiento</a></li>
+                    <li th:if="${usuario != null and usuario.esDonanteHumano()}"><a href="/donante/incentivos">Incentivos</a></li>
+                </th:block>
+
+                <th:block sec:authorize="hasRole('BENEFICIARIA')">
+                    <li><a href="/entidad/necesidades">Necesidades</a></li>
+                    <li><a href="/entidad/donaciones">Donaciones recibidas</a></li>
+                    <li><a href="/entidad/seguimiento">Seguimiento</a></li>
+                </th:block>
+
+                <th:block sec:authorize="hasRole('ADMIN')">
+                    <li><a href="/admin/donaciones">Donaciones</a></li>
+                    <li><a href="/admin/asignaciones">Asignaciones</a></li>
+                    <li><a href="/admin/logistica">Logística</a></li>
+                    <li><a href="/admin/monitoreo">Monitoreo</a></li>
+                    <li><a href="/admin/donantes">Donantes</a></li>
+                    <li><a href="/admin/entidades">Entidades</a></li>
+                    <li><a href="/admin/camiones">Camiones</a></li>
+                    <li><a href="/admin/rankings">Rankings</a></li>
+                    <li><a href="/admin/importaciones">Importar</a></li>
+                </th:block>
+
+                <th:block sec:authorize="hasRole('CHOFER')">
+                    <li><a href="/chofer">Mis rutas</a></li>
+                </th:block>
+
+                <th:block sec:authorize="isAuthenticated()">
+                    <li>
+                        <a href="/notificaciones">Notificaciones
+                            <span id="no-leidas" class="contador" hidden></span>
+                        </a>
+                    </li>
+                    <li>
+                        <form th:action="@{/salir}" method="post" class="mb-0">
+                            <button class="enlace" type="submit" th:title="'Cerrar la sesión de ' + ${usuario != null ? usuario.email() : ''}">
+                                Salir
+                            </button>
+                        </form>
+                    </li>
+                </th:block>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<div class="toasts" role="status" aria-live="polite">
+    <div th:if="${aviso != null}" class="toast" th:classappend="${aviso.tipo}" th:text="${aviso.mensaje}"></div>
+</div>
+
+<main id="contenido" tabindex="-1" th:replace="${contenido}"></main>
+
+<footer class="pie">
+    <div class="contenedor">
+        <div>
+            <strong>DonaTrack</strong>
+            <p class="mb-0">Una iniciativa de UTN Solidaria · Subsecretaría de Asuntos Estudiantiles, UTN FRBA.</p>
+        </div>
+        <div>
+            <strong>Transparencia</strong>
+            <ul style="list-style:none;padding:0;margin:.5rem 0 0">
+                <li><a href="/galeria">Fotos de entregas</a></li>
+                <li><a href="/mapa">Mapa de donaciones entregadas</a></li>
+            </ul>
+        </div>
+        <div>
+            <strong>Información</strong>
+            <ul style="list-style:none;padding:0;margin:.5rem 0 0">
+                <li><a href="/legal">Términos y privacidad (Ley 25.326)</a></li>
+                <li><a href="/accesibilidad">Accesibilidad (Ley 26.653)</a></li>
+            </ul>
+        </div>
+    </div>
+</footer>
+
+<dialog id="confirmacion" aria-labelledby="confirmacion-titulo">
+    <h2 id="confirmacion-titulo">¿Confirmás esta acción?</h2>
+    <p data-mensaje></p>
+    <div class="acciones">
+        <button type="button" class="boton fantasma" data-cancelar>Cancelar</button>
+        <button type="button" class="boton" data-aceptar>Confirmar</button>
+    </div>
+</dialog>
+
+<script src="/js/donatrack.js"></script>
+</body>
+</html>
+
+<!-- Recursos de mapas: se incluyen sólo en las páginas que los usan -->
+<th:block th:fragment="leaflet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+</th:block>
+
+<!-- Paginación reutilizable -->
+<nav th:fragment="paginacion(resultado, base)" class="paginacion" aria-label="Paginación"
+     th:if="${resultado.totalPaginas > 1}">
+    <a class="boton chico fantasma" th:if="${resultado.pagina > 0}"
+       th:href="${base} + 'pagina=' + ${resultado.pagina - 1}">← Anterior</a>
+    <span class="suave chico" style="align-self:center"
+          th:text="'Página ' + ${resultado.pagina + 1} + ' de ' + ${resultado.totalPaginas}"></span>
+    <a class="boton chico fantasma" th:if="${resultado.pagina + 1 < resultado.totalPaginas}"
+       th:href="${base} + 'pagina=' + ${resultado.pagina + 1}">Siguiente →</a>
+</nav>

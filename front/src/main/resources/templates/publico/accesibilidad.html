@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Accesibilidad', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor pila" style="max-width:820px">
+        <h1>Declaración de accesibilidad</h1>
+        <p>DonaTrack busca cumplir la <strong>Ley 26.653 de Accesibilidad de la Información en las Páginas Web</strong>
+            y las pautas <strong>WCAG 2.1 nivel AA</strong>.</p>
+        <div class="tarjeta">
+            <h2>Qué incorporamos</h2>
+            <ul class="mb-0">
+                <li>Estructura semántica (encabezados, regiones, listas) y enlace para saltar al contenido.</li>
+                <li>Contraste mínimo 4.5:1 en textos y foco visible en todos los elementos interactivos.</li>
+                <li>Áreas táctiles de al menos 48×48 px.</li>
+                <li>Formularios con etiquetas, ayudas y mensajes de error anunciados por lectores de pantalla.</li>
+                <li>Mapas acompañados de un listado equivalente en texto.</li>
+                <li>Respeto de la preferencia del sistema "reducir movimiento".</li>
+            </ul>
+        </div>
+        <p>¿Encontraste una barrera? Escribinos a <a href="mailto:accesibilidad@donatrack.org">accesibilidad@donatrack.org</a>.</p>
+    </div>
+</main>
+</body>
+</html>

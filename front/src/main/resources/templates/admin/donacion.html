@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Gestionar donación', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor">
+        <nav class="migas" aria-label="Ubicación"><a href="/admin/donaciones">Donaciones</a> › Detalle</nav>
+        <h1>Donación de <span th:text="${donante.nombreVisible}"></span></h1>
+        <div th:replace="~{fragmentos/donacion :: detalle(${donacion})}"></div>
+
+        <section class="tarjeta mt-5" aria-labelledby="t-acciones"
+                 th:if="${donacion.estado == 'EN_DEPOSITO' or donacion.estado == 'ASIGNADA' or donacion.estado == 'LISTA_PARA_ENTREGAR' or donacion.estado == 'ENTREGA_FALLIDA'}">
+            <h2 id="t-acciones">Acciones de depósito</h2>
+            <div class="grilla">
+                <a class="boton" th:if="${donacion.estado == 'EN_DEPOSITO'}" th:href="@{/admin/asignaciones/{id}(id=${donacion.id})}">🎯 Asignar entidad</a>
+                <form th:action="@{/admin/donaciones/{id}/estado(id=${donacion.id})}" method="post"
+                      data-confirmar="La donación quedará como vencida y no podrá entregarse.">
+                    <input type="hidden" name="estado" value="VENCIDA">
+                    <div class="campo">
+                        <label for="motivo-vencida">Motivo del vencimiento</label>
+                        <input id="motivo-vencida" name="motivo" required placeholder="Ej.: fecha de vencimiento superada">
+                    </div>
+                    <button class="boton peligro" type="submit">Marcar como vencida</button>
+                </form>
+                <form th:if="${donacion.estado == 'ENTREGA_FALLIDA' or donacion.estado == 'ASIGNADA'}"
+                      th:action="@{/admin/donaciones/{id}/estado(id=${donacion.id})}" method="post"
+                      data-confirmar="Se liberará la asignación y la donación volverá a estar disponible para el matchmaking.">
+                    <input type="hidden" name="estado" value="EN_DEPOSITO">
+                    <div class="campo">
+                        <label for="motivo-deposito">Motivo</label>
+                        <input id="motivo-deposito" name="motivo" placeholder="Ej.: la entidad ya no la necesita">
+                    </div>
+                    <button class="boton secundario" type="submit">Devolver al depósito y reasignar</button>
+                </form>
+            </div>
+        </section>
+    </div>
+</main>
+</body>
+</html>

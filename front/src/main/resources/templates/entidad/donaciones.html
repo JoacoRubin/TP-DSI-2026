@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Donaciones asignadas', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor">
+        <h1>Donaciones asignadas</h1>
+        <p class="suave">Cuando el camión llegue, confirmá la recepción y subí fotos: así la persona donante sabe que su ayuda llegó.</p>
+        <div class="pila">
+            <article class="tarjeta" th:each="d : ${donaciones}" th:with="e=${entregas[d.id]}">
+                <div class="fila-entre">
+                    <div>
+                        <h2 class="mb-0" th:text="${d.descripcionCorta}"></h2>
+                        <span class="chico suave" th:text="${d.categoria} + ' · asignada el ' + ${@fmt.fecha(d.registradaEn)}"></span>
+                    </div>
+                    <span class="estado" th:classappend="${@fmt.claseEstado(d.estado)}" th:text="${d.estadoEtiqueta}"></span>
+                </div>
+
+                <th:block th:if="${e != null and e.estado == 'EN_TRASLADO'}">
+                    <div class="banner aviso mt-4">🚚 En camino en el camión <strong th:text="${e.patente}"></strong>.
+                        <a href="/entidad/seguimiento">Ver en el mapa</a></div>
+                    <div class="grilla">
+                        <form th:action="@{/entidad/entregas/{id}/recepcion(id=${e.id})}" method="post" enctype="multipart/form-data">
+                            <div class="campo">
+                                <label th:for="'fotos-' + ${e.id}">Fotos de lo recibido</label>
+                                <input type="file" th:id="'fotos-' + ${e.id}" name="fotos" accept="image/jpeg,image/png,image/webp" multiple
+                                       th:attr="aria-describedby='fotos-ayuda-' + ${e.id}">
+                                <span class="ayuda" th:id="'fotos-ayuda-' + ${e.id}">JPG, PNG o WEBP. Máximo 5 MB cada una.</span>
+                            </div>
+                            <button class="boton" type="submit"><span class="spinner" aria-hidden="true"></span>✅ Confirmar recepción</button>
+                        </form>
+                        <form th:action="@{/entidad/entregas/{id}/no-recibida(id=${e.id})}" method="post"
+                              data-confirmar="Vamos a informar a la administración y a la persona donante que la entrega no llegó.">
+                            <div class="campo">
+                                <label th:for="'motivo-' + ${e.id}">¿No llegó? Contanos qué pasó</label>
+                                <input th:id="'motivo-' + ${e.id}" name="motivo" required placeholder="Ej.: El camión no pasó por la escuela">
+                            </div>
+                            <button class="boton peligro" type="submit">No la recibimos</button>
+                        </form>
+                    </div>
+                </th:block>
+
+                <th:block th:if="${e != null and e.estado == 'ENTREGADA'}">
+                    <p class="mt-4 chico" th:text="'Recibida el ' + ${@fmt.fechaHora(e.entregadaEn)} + ' · Camión ' + ${e.patente}"></p>
+                    <div class="fila" th:unless="${#lists.isEmpty(e.fotos)}">
+                        <img th:each="f : ${e.fotos}" th:src="@{/fotos/logistica/{n}(n=${#strings.substringAfter(f, '/api/fotos/')})}" alt="Foto de la donación recibida"
+                             style="width:140px;height:100px;object-fit:cover;border-radius:8px" loading="lazy">
+                    </div>
+                    <form th:action="@{/entidad/entregas/{id}/fotos(id=${e.id})}" method="post" enctype="multipart/form-data" class="fila mt-4">
+                        <label th:for="'mas-fotos-' + ${e.id}" class="chico">Agregar fotos</label>
+                        <input type="file" th:id="'mas-fotos-' + ${e.id}" name="fotos" accept="image/jpeg,image/png,image/webp" multiple required>
+                        <button class="boton chico secundario" type="submit">Subir</button>
+                    </form>
+                </th:block>
+
+                <p class="mt-4 chico suave" th:if="${e != null and e.estado == 'NO_RECIBIDA'}"
+                   th:text="'Informaste que no se recibió: ' + ${e.motivoNoRecepcion} + '. La administración está revisando el caso.'"></p>
+            </article>
+        </div>
+        <p class="vacio tarjeta" th:if="${#lists.isEmpty(donaciones)}">Todavía no tenés donaciones asignadas. ¡Publicá tus necesidades!</p>
+    </div>
+</main>
+</body>
+</html>

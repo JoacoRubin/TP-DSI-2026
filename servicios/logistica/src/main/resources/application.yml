@@ -1,0 +1,72 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: logistica
+  profiles:
+    default: local
+  artemis:
+    mode: native
+    broker-url: tcp://localhost:61616
+  data:
+    mongodb:
+      database: donatrack_logistica
+      uuid-representation: standard
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AUTH_URL:http://localhost:8085}/.well-known/jwks.json
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 30MB
+
+donatrack:
+  logistica:
+    url-planificador: ${PLANIFICADOR_URL:http://localhost:8090}
+    url-callback: ${LOGISTICA_PUBLIC_URL:http://localhost:8082}/api/planificaciones/callback
+    token-callback: ${TOKEN_CALLBACK:token-callback-local-cambiar}
+    url-seguimiento: ${FRONT_URL:http://localhost:8080}/seguimiento
+    deposito:
+      # UTN FRBA - Sede Medrano
+      latitud: -34.5986
+      longitud: -58.4202
+  cron:
+    planificacion: "0 0 2 * * *"
+
+management:
+  health:
+    jms:
+      enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+---
+# Local: MongoDB embebido (se descarga la primera vez). Datos persistentes en ./data/logistica
+spring:
+  config:
+    activate:
+      on-profile: local
+de:
+  flapdoodle:
+    mongodb:
+      embedded:
+        version: 7.0.14
+        # Persistente entre reinicios (verificado con javap sobre EmbeddedMongoProperties)
+        database-dir: ./data/logistica/mongo
+
+---
+# Mongo real (Docker / Atlas)
+spring:
+  config:
+    activate:
+      on-profile: mongo
+  autoconfigure:
+    exclude: de.flapdoodle.embed.mongo.spring.autoconfigure.EmbeddedMongoAutoConfiguration
+  data:
+    mongodb:
+      uri: ${MONGO_URI:mongodb://localhost:27017/donatrack_logistica}

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Monitoreo de camiones', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <th:block th:replace="~{fragmentos/layout :: leaflet}"></th:block>
+    <div class="contenedor">
+        <h1>Monitoreo en tiempo real</h1>
+        <p class="suave">Posición actual y avance de cada camión sobre su ruta. Se actualiza cada 5 segundos.</p>
+        <div id="mapa" class="mapa skeleton" style="height:540px" role="region" aria-label="Mapa de camiones en ruta"></div>
+        <p class="leyenda"><span>🚚 Camión</span><span>📍 Parada</span><span>— Recorrido realizado</span></p>
+        <h2 class="mt-5">Rutas</h2>
+        <div class="tabla-envoltura">
+            <table class="apilable">
+                <thead><tr><th>Camión</th><th>Estado</th><th>Paradas</th><th>Velocidad</th><th>Última señal</th></tr></thead>
+                <tbody id="tabla-rutas"><tr><td colspan="5" class="vacio">Cargando…</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('mapa').classList.remove('skeleton');
+            const mapa = DonaTrack.mapa('mapa');
+            const dibujar = DonaTrack.rutasEnMapa(mapa);
+            const tabla = document.getElementById('tabla-rutas');
+            DonaTrack.polling('/front-api/monitoreo', 5000, function (rutas) {
+                dibujar(rutas);
+                tabla.innerHTML = rutas.length ? '' : '<tr><td colspan="5" class="vacio">No hay rutas activas ni planificadas.</td></tr>';
+                rutas.forEach(r => {
+                    const tr = document.createElement('tr');
+                    const p = r.ultimaPosicion;
+                    tr.innerHTML = '<td data-etiqueta="Camión"><strong>' + DonaTrack.escapar(r.patente) + '</strong></td>'
+                        + '<td data-etiqueta="Estado"><span class="estado ' + (r.estado === 'EN_CURSO' ? 'aviso' : 'info') + '">'
+                        + (r.estado === 'EN_CURSO' ? 'En curso' : 'Planificada') + '</span></td>'
+                        + '<td data-etiqueta="Paradas">' + r.paradas.length + '</td>'
+                        + '<td data-etiqueta="Velocidad">' + (p ? Math.round(p.velocidadKmh) + ' km/h' : '—') + '</td>'
+                        + '<td data-etiqueta="Última señal">' + (p ? DonaTrack.hora(p.registradaEn) : 'sin señal') + '</td>';
+                    tabla.appendChild(tr);
+                });
+            });
+        });
+    </script>
+</main>
+</body>
+</html>

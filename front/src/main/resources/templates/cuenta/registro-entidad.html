@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Registro de entidad beneficiaria', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <th:block th:replace="~{fragmentos/layout :: leaflet}"></th:block>
+    <div class="contenedor" style="max-width:900px">
+        <nav class="migas" aria-label="Ubicación"><a href="/registro">Registro</a> › Entidad beneficiaria</nav>
+        <h1>Registro de entidad beneficiaria</h1>
+        <p class="suave">Las entidades son organizaciones sin fines de lucro: escuelas, comedores, espacios de tutoría, hogares.</p>
+        <form th:action="@{/registro/entidad}" method="post">
+            <th:block th:replace="~{fragmentos/campos :: entidad(${form})}"></th:block>
+            <th:block th:replace="~{fragmentos/campos :: direccion(${form}, true)}"></th:block>
+            <th:block th:replace="~{fragmentos/campos :: clave}"></th:block>
+            <th:block th:replace="~{fragmentos/campos :: terminos}"></th:block>
+            <div class="acciones">
+                <a class="boton fantasma" href="/registro">Cancelar</a>
+                <button class="boton" type="submit"><span class="spinner" aria-hidden="true"></span>Registrar entidad</button>
+            </div>
+        </form>
+    </div>
+    <script>document.addEventListener('DOMContentLoaded', () => DonaTrack.selectorUbicacion('selector', 'latitud', 'longitud'));</script>
+</main>
+</body>
+</html>

@@ -1,0 +1,10 @@
+target/
+data/
+logs/
+*.log
+.idea/
+*.iml
+.vscode/
+.DS_Store
+# Claves RSA generadas en desarrollo
+**/claves/

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Ingresar', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor" style="max-width:480px">
+        <div class="tarjeta">
+            <h1>Ingresar</h1>
+            <div class="banner error" role="alert" th:if="${errorLogin != null}" th:text="${errorLogin}"></div>
+            <div class="banner aviso" role="alert" th:if="${param.expirada}">Tu sesión expiró. Volvé a ingresar.</div>
+            <form th:action="@{/login}" method="post" novalidate>
+                <div class="campo">
+                    <label for="email">Correo electrónico</label>
+                    <input id="email" name="email" type="email" required autocomplete="username" autofocus placeholder="nombre@correo.com">
+                </div>
+                <div class="campo">
+                    <label for="clave">Contraseña</label>
+                    <input id="clave" name="clave" type="password" required autocomplete="current-password">
+                </div>
+                <button class="boton" type="submit" style="width:100%"><span class="spinner" aria-hidden="true"></span>Ingresar</button>
+            </form>
+            <p class="mt-4 centro">¿No tenés cuenta? <a href="/registro">Registrate</a></p>
+        </div>
+        <details class="tarjeta mt-4">
+            <summary><strong>Cuentas de demostración</strong></summary>
+            <p class="chico suave mt-4">Contraseña para todas: <code>Demo1234!</code></p>
+            <ul class="chico">
+                <li>Administración: <code>admin@donatrack.org</code></li>
+                <li>Donante (persona humana): <code>ana@donatrack.org</code></li>
+                <li>Donante (persona jurídica): <code>contacto@arcosplateados.com</code></li>
+                <li>Entidad: <code>escuela10@donatrack.org</code>, <code>comedor@donatrack.org</code>, <code>hogar@donatrack.org</code></li>
+                <li>Chofer (camión AE123BC): <code>chofer@donatrack.org</code></li>
+            </ul>
+        </details>
+    </div>
+</main>
+</body>
+</html>

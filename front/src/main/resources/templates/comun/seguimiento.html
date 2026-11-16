@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Seguimiento de entregas', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <th:block th:replace="~{fragmentos/layout :: leaflet}"></th:block>
+    <div class="contenedor">
+        <h1>Seguimiento en tiempo real</h1>
+        <p class="suave">Camiones en camino con tus donaciones. La posición se actualiza automáticamente cada 10 segundos.</p>
+        <div id="mapa" class="mapa skeleton" role="region" aria-label="Mapa de seguimiento de camiones"></div>
+        <p class="leyenda"><span>🚚 Camión</span><span>🏠 Tu destino</span><span>📍 Otras paradas</span></p>
+        <div id="sin-rutas" class="banner info" hidden>No hay entregas en curso en este momento. Te avisaremos cuando el camión salga.</div>
+        <section aria-labelledby="t-camiones" class="mt-4">
+            <h2 id="t-camiones">Camiones en ruta</h2>
+            <div id="detalle" class="grilla" aria-live="polite"></div>
+        </section>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('mapa').classList.remove('skeleton');
+            const mapa = DonaTrack.mapa('mapa');
+            const dibujar = DonaTrack.rutasEnMapa(mapa);
+            DonaTrack.polling('/front-api/seguimiento', 10000, function (rutas) {
+                dibujar(rutas);
+                document.getElementById('sin-rutas').hidden = rutas.length > 0;
+                const detalle = document.getElementById('detalle');
+                detalle.innerHTML = '';
+                rutas.forEach(r => {
+                    const t = document.createElement('article');
+                    t.className = 'tarjeta';
+                    const entregas = r.paradas.flatMap(p => p.entregas).filter(e => e.propia).map(e => DonaTrack.escapar(e.descripcion));
+                    t.innerHTML = '<h3>🚚 Camión ' + DonaTrack.escapar(r.patente) + '</h3>'
+                        + '<p class="chico suave">Última actualización: ' + (r.ultimaPosicion ? DonaTrack.hora(r.ultimaPosicion.registradaEn) : 'esperando señal GPS') + '</p>'
+                        + (entregas.length ? '<p class="mb-0">Lleva: ' + entregas.join(', ') + '</p>' : '');
+                    detalle.appendChild(t);
+                });
+            });
+        });
+    </script>
+</main>
+</body>
+</html>

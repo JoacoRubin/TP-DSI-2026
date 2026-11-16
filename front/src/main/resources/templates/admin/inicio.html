@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Panel de administración', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor">
+        <div class="fila-entre">
+            <h1 class="mb-0">Panel de administración</h1>
+            <div class="fila">
+                <a class="boton" href="/admin/donaciones/nueva">➕ Registrar donación</a>
+                <a class="boton secundario" href="/admin/donantes/nuevo">Registrar donante</a>
+            </div>
+        </div>
+        <div class="grilla mt-5">
+            <a class="tarjeta tarjeta-enlace kpi" href="/admin/asignaciones">
+                <span class="valor" th:text="${#lists.size(pendientes)}"></span><span class="etiqueta">donaciones en depósito por asignar</span></a>
+            <a class="tarjeta tarjeta-enlace kpi" href="/admin/logistica?estado=PENDIENTE" th:if="${entregasPendientes != null}">
+                <span class="valor" th:text="${#lists.size(entregasPendientes)}"></span><span class="etiqueta">entregas por planificar</span></a>
+            <a class="tarjeta tarjeta-enlace kpi" href="/admin/monitoreo" th:if="${monitoreo != null}">
+                <span class="valor" th:text="${#lists.size(monitoreo.?[estado == 'EN_CURSO'])}"></span><span class="etiqueta">camiones en ruta</span></a>
+            <a class="tarjeta tarjeta-enlace kpi" href="/admin/logistica?estado=NO_RECIBIDA" th:if="${noRecibidas != null}">
+                <span class="valor" th:style="${#lists.size(noRecibidas) > 0} ? 'color:var(--c-error)' : ''" th:text="${#lists.size(noRecibidas)}"></span>
+                <span class="etiqueta">entregas fallidas a revisar</span></a>
+        </div>
+        <h2 class="mt-5">Accesos rápidos</h2>
+        <div class="grilla">
+            <a class="tarjeta tarjeta-enlace" href="/admin/donaciones"><h3>📦 Donaciones</h3><p class="suave mb-0">Buscar, ver trazabilidad, marcar vencidas.</p></a>
+            <a class="tarjeta tarjeta-enlace" href="/admin/asignaciones"><h3>🎯 Asignaciones</h3><p class="suave mb-0">Algoritmos de matchmaking y selección final.</p></a>
+            <a class="tarjeta tarjeta-enlace" href="/admin/logistica"><h3>🗓️ Logística</h3><p class="suave mb-0">Planificación de rutas y entregas.</p></a>
+            <a class="tarjeta tarjeta-enlace" href="/admin/monitoreo"><h3>🛰️ Monitoreo</h3><p class="suave mb-0">Camiones en tiempo real.</p></a>
+            <a class="tarjeta tarjeta-enlace" href="/admin/rankings"><h3>🏆 Rankings</h3><p class="suave mb-0">Donantes más activos por mes.</p></a>
+            <a class="tarjeta tarjeta-enlace" href="/admin/importaciones"><h3>📥 Importar CSV</h3><p class="suave mb-0">Migración masiva de donantes.</p></a>
+        </div>
+    </div>
+</main>
+</body>
+</html>

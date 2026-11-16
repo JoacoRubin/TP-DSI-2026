@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Detalle de una donación con su trazabilidad (historial de estados) -->
+<div th:fragment="detalle(d)" class="grilla-2">
+    <section class="tarjeta">
+        <div class="fila-entre">
+            <h2 class="mb-0" th:text="${d.descripcionCorta}"></h2>
+            <span class="estado" th:classappend="${@fmt.claseEstado(d.estado)}" th:text="${d.estadoEtiqueta}"></span>
+        </div>
+        <p class="suave mt-4" th:if="${d.descripcionGeneral != null}" th:text="${d.descripcionGeneral}"></p>
+        <dl class="campos">
+            <div><dt class="suave chico">Categoría</dt><dd class="mt-0" th:text="${d.categoria} + ' › ' + ${d.subcategoria}"></dd></div>
+            <div><dt class="suave chico">Ingreso al depósito</dt><dd th:text="${@fmt.fechaHora(d.registradaEn)}"></dd></div>
+            <div th:if="${d.fechaVencimiento != null}"><dt class="suave chico">Vencimiento</dt><dd th:text="${@fmt.fecha(d.fechaVencimiento)}"></dd></div>
+            <div th:if="${d.estadoUso != null}"><dt class="suave chico">Estado</dt><dd th:text="${d.estadoUso == 'NUEVO' ? 'Nuevo' : 'Usado'}"></dd></div>
+            <div th:if="${d.patenteEntrega != null}"><dt class="suave chico">Camión</dt><dd th:text="${d.patenteEntrega}"></dd></div>
+        </dl>
+        <h3>Bienes</h3>
+        <ul>
+            <li th:each="b : ${d.bienes}">
+                <span th:text="${b.cantidad} + ' × ' + ${b.descripcion}"></span>
+                <img th:if="${b.fotoUrl != null}" th:src="@{/fotos/donaciones/{n}(n=${#strings.substringAfter(b.fotoUrl, '/api/fotos/')})}" th:alt="'Foto de ' + ${b.descripcion}"
+                     style="max-width:160px;border-radius:8px;margin:.5rem 0">
+            </li>
+        </ul>
+    </section>
+    <section class="tarjeta">
+        <h2>Trazabilidad</h2>
+        <ol class="linea-tiempo">
+            <li th:each="h : ${d.historial}">
+                <strong th:text="${h.hastaEtiqueta}"></strong>
+                <div class="chico suave" th:text="${@fmt.fechaHora(h.fecha)}"></div>
+                <div class="chico" th:if="${h.motivo != null}" th:text="${h.motivo}"></div>
+            </li>
+        </ol>
+    </section>
+</div>
+</body>
+</html>

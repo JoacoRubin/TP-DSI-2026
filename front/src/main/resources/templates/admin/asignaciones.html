@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Asignaciones', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor">
+        <div class="fila-entre">
+            <h1 class="mb-0">Asignación de donaciones</h1>
+            <form th:action="@{/admin/asignaciones/ejecucion}" method="post" class="mb-0">
+                <button class="boton" type="submit"><span class="spinner" aria-hidden="true"></span>⚙️ Ejecutar algoritmos ahora</button>
+            </form>
+        </div>
+        <p class="suave mt-4">Los algoritmos corren automáticamente todas las noches (3:00, horario de baja carga).
+            También podés ejecutarlos a demanda: corren en segundo plano.</p>
+
+        <div class="grilla-2">
+            <section aria-labelledby="t-pend">
+                <h2 id="t-pend">Donaciones en depósito</h2>
+                <div class="tabla-envoltura">
+                    <table class="apilable">
+                        <thead><tr><th>Donación</th><th>Ingreso</th><th>Propuestas</th><th><span class="sr-only">Acciones</span></th></tr></thead>
+                        <tbody>
+                        <tr th:each="p : ${pendientes}">
+                            <td data-etiqueta="Donación"><strong th:text="${p.descripcion}"></strong>
+                                <div class="chico suave" th:text="${p.categoria}"></div></td>
+                            <td data-etiqueta="Ingreso" th:text="${@fmt.fecha(p.registradaEn)}"></td>
+                            <td data-etiqueta="Propuestas">
+                                <span th:if="${!p.evaluada}" class="estado neutro">Sin evaluar</span>
+                                <span th:if="${p.evaluada and p.coincidencias > 0}" class="estado exito" th:text="${p.coincidencias} + ' coincidencias'"></span>
+                                <span th:if="${p.evaluada and p.coincidencias == 0}" class="estado aviso">Rankings separados</span>
+                            </td>
+                            <td><a class="boton chico" th:href="@{/admin/asignaciones/{id}(id=${p.donacionId})}">Asignar</a></td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(pendientes)}"><td colspan="4" class="vacio">No hay donaciones esperando asignación 🎉</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="tarjeta" aria-labelledby="t-pesos">
+                <h2 id="t-pesos">Pesos de compatibilidad semántica</h2>
+                <p class="chico suave">S = w₁·similitud textual + w₂·cobertura de volumen + w₃·tipo de necesidad. Deben sumar 1.</p>
+                <form th:action="@{/admin/asignaciones/pesos}" method="post">
+                    <div class="campo"><label for="w1">w₁ textual</label>
+                        <input id="w1" name="textual" type="number" step="0.05" min="0" max="1" th:value="${pesos.textual}" required></div>
+                    <div class="campo"><label for="w2">w₂ volumen</label>
+                        <input id="w2" name="volumen" type="number" step="0.05" min="0" max="1" th:value="${pesos.volumen}" required></div>
+                    <div class="campo"><label for="w3">w₃ tipo</label>
+                        <input id="w3" name="tipo" type="number" step="0.05" min="0" max="1" th:value="${pesos.tipo}" required></div>
+                    <p class="chico" id="suma-pesos" aria-live="polite"></p>
+                    <button class="boton secundario" type="submit" style="width:100%">Guardar pesos</button>
+                </form>
+            </section>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const ids = ['w1', 'w2', 'w3'];
+            const salida = document.getElementById('suma-pesos');
+            function sumar() {
+                const s = ids.reduce((a, id) => a + (parseFloat(document.getElementById(id).value) || 0), 0);
+                salida.textContent = 'Suma actual: ' + s.toFixed(2) + (Math.abs(s - 1) < 1e-6 ? ' ✔' : ' (debe ser 1)');
+                salida.style.color = Math.abs(s - 1) < 1e-6 ? 'var(--c-exito)' : 'var(--c-error)';
+            }
+            ids.forEach(id => document.getElementById(id).addEventListener('input', sumar));
+            sumar();
+        });
+    </script>
+</main>
+</body>
+</html>

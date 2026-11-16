@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Donaciones', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor">
+        <div class="fila-entre">
+            <h1 class="mb-0">Donaciones</h1>
+            <a class="boton" href="/admin/donaciones/nueva">➕ Registrar donación</a>
+        </div>
+        <div class="mt-4" th:replace="~{fragmentos/filtros :: donaciones('/admin/donaciones', ${filtro}, ${categorias}, false)}"></div>
+        <p class="suave mt-4" th:text="${resultado.total} + ' donaciones'"></p>
+        <div class="tabla-envoltura">
+            <table class="apilable">
+                <thead><tr><th>Donación</th><th>Categoría</th><th>Ingreso</th><th>Vence</th><th>Estado</th><th><span class="sr-only">Acciones</span></th></tr></thead>
+                <tbody>
+                <tr th:each="d : ${resultado.elementos}">
+                    <td data-etiqueta="Donación"><strong th:text="${d.descripcionCorta}"></strong></td>
+                    <td data-etiqueta="Categoría" th:text="${d.categoria}"></td>
+                    <td data-etiqueta="Ingreso" th:text="${@fmt.fecha(d.registradaEn)}"></td>
+                    <td data-etiqueta="Vence" th:text="${@fmt.fecha(d.fechaVencimiento)}"></td>
+                    <td data-etiqueta="Estado"><span class="estado" th:classappend="${@fmt.claseEstado(d.estado)}" th:text="${d.estadoEtiqueta}"></span></td>
+                    <td><a class="boton chico secundario" th:href="@{/admin/donaciones/{id}(id=${d.id})}">Gestionar</a></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(resultado.elementos)}"><td colspan="6" class="vacio">Sin resultados.</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <nav th:replace="~{fragmentos/layout :: paginacion(${resultado}, '/admin/donaciones?estado=' + ${filtro.estado} + '&categoria=' + ${filtro.categoria} + '&')}"></nav>
+    </div>
+</main>
+</body>
+</html>

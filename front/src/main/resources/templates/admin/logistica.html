@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Logística', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor">
+        <div class="fila-entre">
+            <h1 class="mb-0">Logística de entregas</h1>
+            <form th:action="@{/admin/logistica/planificacion}" method="post" class="mb-0">
+                <button class="boton" type="submit"><span class="spinner" aria-hidden="true"></span>🗓️ Planificar rutas ahora</button>
+            </form>
+        </div>
+        <p class="suave mt-4">Las rutas del día siguiente se planifican automáticamente a las 2:00. El proveedor externo procesa
+            hasta 100 entregas por ejecución; las que no pudo asignar vuelven a "Pendiente" para replanificarse.</p>
+
+        <nav class="fila" aria-label="Filtrar por estado">
+            <a th:each="e : ${ {'PENDIENTE','EN_PLANIFICACION','PLANIFICADA','EN_TRASLADO','NO_RECIBIDA','ENTREGADA'} }"
+               class="boton chico" th:classappend="${estado == e} ? '' : 'fantasma'" th:href="@{/admin/logistica(estado=${e})}"
+               th:text="${@fmt.estado(e)}" th:attr="aria-current=${estado == e} ? 'true' : null"></a>
+        </nav>
+
+        <div class="tabla-envoltura mt-4">
+            <table class="apilable">
+                <caption class="sr-only" th:text="'Entregas en estado ' + ${@fmt.estado(estado)}"></caption>
+                <thead><tr><th>Donación</th><th>Destino</th><th>Camión</th><th>Estado</th><th><span class="sr-only">Acciones</span></th></tr></thead>
+                <tbody>
+                <tr th:each="e : ${entregas}">
+                    <td data-etiqueta="Donación"><strong th:text="${e.descripcion}"></strong>
+                        <div class="chico suave" th:text="'De ' + ${e.donanteNombre} + ' · ' + ${e.pesoKg} + ' kg'"></div></td>
+                    <td data-etiqueta="Destino"><span th:text="${e.entidadNombre}"></span><div class="chico suave" th:text="${e.direccion}"></div></td>
+                    <td data-etiqueta="Camión" th:text="${e.patente ?: '—'}"></td>
+                    <td data-etiqueta="Estado"><span class="estado" th:classappend="${@fmt.claseEstado(e.estado)}" th:text="${e.estadoEtiqueta}"></span>
+                        <div class="chico" th:if="${e.motivoNoRecepcion != null}" th:text="'Motivo: ' + ${e.motivoNoRecepcion}"></div></td>
+                    <td>
+                        <form th:if="${e.estado == 'NO_RECIBIDA'}" th:action="@{/admin/logistica/entregas/{id}/reprogramacion(id=${e.id})}"
+                              method="post" class="mb-0" data-confirmar="La entrega volverá a pendiente para incluirse en la próxima ruta.">
+                            <button class="boton chico" type="submit">Reprogramar</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(entregas)}"><td colspan="5" class="vacio">No hay entregas en este estado.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="grilla-2 mt-5" style="grid-template-columns:1fr 1fr">
+            <section aria-labelledby="t-rutas">
+                <h2 id="t-rutas">Rutas recientes</h2>
+                <div class="tabla-envoltura">
+                    <table class="apilable">
+                        <thead><tr><th>Fecha</th><th>Camión</th><th>Paradas</th><th>Estado</th></tr></thead>
+                        <tbody>
+                        <tr th:each="r : ${rutas}">
+                            <td data-etiqueta="Fecha" th:text="${@fmt.fecha(r.fecha)}"></td>
+                            <td data-etiqueta="Camión" th:text="${r.patente}"></td>
+                            <td data-etiqueta="Paradas" th:text="${#lists.size(r.paradas)} + ' (' + ${r.totalEntregas} + ' entregas)'"></td>
+                            <td data-etiqueta="Estado"><span class="estado" th:classappend="${@fmt.claseEstado(r.estado)}" th:text="${@fmt.estado(r.estado)}"></span></td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(rutas)}"><td colspan="4" class="vacio">Sin rutas todavía.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            <section aria-labelledby="t-sol">
+                <h2 id="t-sol">Ejecuciones del planificador</h2>
+                <div class="tabla-envoltura">
+                    <table class="apilable">
+                        <thead><tr><th>Enviada</th><th>Entregas</th><th>Resultado</th></tr></thead>
+                        <tbody>
+                        <tr th:each="s : ${solicitudes}">
+                            <td data-etiqueta="Enviada" th:text="${@fmt.fechaHora(s.enviadaEn)}"></td>
+                            <td data-etiqueta="Entregas" th:text="${s.entregas}"></td>
+                            <td data-etiqueta="Resultado">
+                                <span class="estado" th:classappend="${@fmt.claseEstado(s.estado)}" th:text="${s.estado}"></span>
+                                <div class="chico" th:if="${s.estado == 'COMPLETADA'}" th:text="${s.rutasGeneradas} + ' rutas · ' + ${s.sinAsignar} + ' sin asignar'"></div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(solicitudes)}"><td colspan="3" class="vacio">Sin ejecuciones.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+</body>
+</html>

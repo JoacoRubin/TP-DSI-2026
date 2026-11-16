@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Incentivos', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor">
+        <h1>Mis incentivos</h1>
+        <div class="banner info" th:if="${panel == null}">
+            Todavía no registramos actividad tuya. ¡Con tu primera donación desbloqueás la primera insignia!
+        </div>
+
+        <th:block th:if="${panel != null}">
+            <div class="grilla">
+                <div class="tarjeta kpi"><span class="etiqueta">Tu categoría</span><span class="valor" th:text="${panel.categoria}"></span></div>
+                <div class="tarjeta kpi"><span class="etiqueta">Insignias</span><span class="valor" th:text="${#lists.size(panel.insignias)}"></span></div>
+                <div class="tarjeta kpi"><span class="etiqueta">Organizaciones ayudadas</span><span class="valor" th:text="${metricas.organizacionesAyudadas}"></span></div>
+                <div class="tarjeta kpi"><span class="etiqueta">Posición en el ranking del mes</span>
+                    <span class="valor" th:text="${metricas.posicionRanking != null ? '#' + metricas.posicionRanking : '—'}"></span></div>
+            </div>
+
+            <div class="grilla-2 mt-5">
+                <section class="tarjeta" aria-labelledby="t-mision">
+                    <h2 id="t-mision">Misión actual</h2>
+                    <th:block th:if="${panel.progreso != null}">
+                        <div class="mision">
+                            <span class="icono" aria-hidden="true" th:text="${panel.progreso.mision.icono}"></span>
+                            <div style="flex:1">
+                                <strong th:text="${panel.progreso.mision.nombre}"></strong>
+                                <div class="suave chico" th:text="${panel.progreso.mision.descripcion}"></div>
+                            </div>
+                        </div>
+                        <div class="progreso mt-4" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                             th:attr="aria-valuenow=${panel.progreso.porcentaje},aria-label='Progreso de la misión'">
+                            <span th:style="'width:' + ${panel.progreso.porcentaje} + '%'"></span>
+                        </div>
+                        <p class="mt-4"><strong th:text="${panel.progreso.actual} + ' / ' + ${panel.progreso.mision.objetivo}"></strong>
+                            · <span th:text="${panel.progreso.restante == 0 ? '¡Completada!' : 'Te faltan ' + panel.progreso.restante}"></span></p>
+                        <p class="chico suave mb-0" th:if="${panel.progreso.mision.tipo == 'RACHA'}">
+                            ⚠️ Las rachas se pierden si pasa un mes completo sin donar.</p>
+                    </th:block>
+                    <p th:if="${panel.progreso == null}">🏆 ¡Completaste todas las misiones! Sos parte del corazón de DonaTrack.</p>
+
+                    <h3 class="mt-5">Todas las misiones</h3>
+                    <div class="mision" th:each="m : ${panel.misiones}" th:classappend="${m.estado}">
+                        <span class="icono" aria-hidden="true" th:text="${m.estado == 'BLOQUEADA' ? '🔒' : m.icono}"></span>
+                        <div style="flex:1">
+                            <strong th:text="${m.nombre}"></strong> <span class="chico suave" th:text="'· ' + ${m.categoria}"></span>
+                            <div class="chico suave" th:text="${m.descripcion}"></div>
+                        </div>
+                        <span class="estado" th:classappend="${@fmt.claseEstado(m.estado)}" th:text="${@fmt.estado(m.estado)}"></span>
+                    </div>
+                </section>
+
+                <div class="pila">
+                    <section class="tarjeta" aria-labelledby="t-insignias">
+                        <h2 id="t-insignias">Insignias</h2>
+                        <div class="fila" th:unless="${#lists.isEmpty(panel.insignias)}">
+                            <div class="insignia" th:each="i : ${panel.insignias}">
+                                <span class="icono" aria-hidden="true" th:text="${i.icono}"></span>
+                                <strong th:text="${i.nombre}"></strong>
+                                <span class="suave" th:text="${@fmt.fecha(i.obtenidaEn)}"></span>
+                            </div>
+                        </div>
+                        <p class="suave" th:if="${#lists.isEmpty(panel.insignias)}">Aún no tenés insignias.</p>
+                        <form th:action="@{/donante/incentivos/preferencias}" method="post" class="mt-4">
+                            <input type="hidden" name="insigniasVisibles" th:value="${!panel.insigniasVisibles}">
+                            <p class="chico suave" th:text="${panel.insigniasVisibles ? 'Tus insignias son visibles en tu perfil y se difunden en redes.' : 'Tus insignias son privadas.'}"></p>
+                            <button class="boton secundario chico" type="submit"
+                                    th:text="${panel.insigniasVisibles ? 'Hacer privadas' : 'Hacer visibles'}"></button>
+                        </form>
+                    </section>
+
+                    <section class="tarjeta" aria-labelledby="t-evolucion">
+                        <h2 id="t-evolucion">Evolución (12 meses)</h2>
+                        <p class="chico suave">
+                            Este mes: <strong th:text="${metricas.mesActual.donaciones}"></strong> donaciones ·
+                            mes anterior: <strong th:text="${metricas.mesAnterior.donaciones}"></strong>
+                            <span th:if="${metricas.variacionPorcentual != null}"
+                                  th:text="'(' + (${metricas.variacionPorcentual >= 0} ? '+' : '') + ${metricas.variacionPorcentual} + '%)'"></span>
+                        </p>
+                        <div class="barras" role="img" aria-label="Gráfico de donaciones por mes de los últimos 12 meses"
+                             th:with="maximo=${@fmt.max(metricas.evolucion, 'donaciones')}">
+                            <div class="barra-col" th:each="p : ${metricas.evolucion}" th:title="${@fmt.mes(p.mes)} + ': ' + ${p.donaciones} + ' donaciones'">
+                                <small th:text="${p.donaciones}"></small>
+                                <span class="b" th:style="'height:' + ${maximo == 0 ? 0 : p.donaciones * 100 / maximo} + '%'"></span>
+                                <small th:text="${#strings.substring(@fmt.mes(p.mes), 0, 3)}"></small>
+                            </div>
+                        </div>
+                        <dl class="campos mt-4">
+                            <div><dt class="chico suave">Total de donaciones</dt><dd th:text="${metricas.totalDonaciones}"></dd></div>
+                            <div><dt class="chico suave">Bienes donados</dt><dd th:text="${metricas.totalBienes}"></dd></div>
+                            <div><dt class="chico suave">Entregas exitosas</dt><dd th:text="${metricas.donacionesExitosas}"></dd></div>
+                        </dl>
+                    </section>
+                </div>
+            </div>
+        </th:block>
+    </div>
+</main>
+</body>
+</html>

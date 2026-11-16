@@ -1,0 +1,22 @@
+server:
+  port: 8161
+
+spring:
+  application:
+    name: broker
+  artemis:
+    mode: embedded
+    embedded:
+      enabled: true
+      persistent: true
+      data-directory: ./data/broker
+
+donatrack:
+  broker:
+    aceptor: tcp://0.0.0.0:61616
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Ruta', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <th:block th:replace="~{fragmentos/layout :: leaflet}"></th:block>
+    <div class="contenedor" style="max-width:900px">
+        <nav class="migas" aria-label="Ubicación"><a href="/chofer">Mis rutas</a> › Ruta</nav>
+        <div class="fila-entre">
+            <h1 class="mb-0" th:text="'Ruta del ' + ${@fmt.fecha(ruta.fecha)}"></h1>
+            <span class="estado" th:classappend="${@fmt.claseEstado(ruta.estado)}" th:text="${@fmt.estado(ruta.estado)}"></span>
+        </div>
+
+        <form th:if="${ruta.estado == 'PLANIFICADA'}" th:action="@{/chofer/rutas/{id}/inicio(id=${ruta.id})}" method="post" class="mt-4"
+              data-confirmar="Al iniciar, las entregas pasan a 'En traslado' y avisamos a entidades y donantes.">
+            <button class="boton" type="submit" style="width:100%;min-height:64px;font-size:1.15rem">▶️ Iniciar recorrido</button>
+        </form>
+
+        <section class="tarjeta mt-4" th:if="${ruta.estado == 'EN_CURSO'}" aria-labelledby="t-gps">
+            <h2 id="t-gps">📡 Ubicación en tiempo real</h2>
+            <p class="chico suave">Mientras la ruta está activa, esta pantalla reporta tu ubicación (como la app móvil del chofer).</p>
+            <p id="gps-estado" aria-live="polite">Esperando permiso de ubicación…</p>
+            <div class="fila">
+                <button class="boton secundario chico" type="button" id="usar-gps">Usar GPS del dispositivo</button>
+                <button class="boton secundario chico" type="button" id="simular" aria-pressed="false">🧪 Simular recorrido</button>
+            </div>
+        </section>
+
+        <div id="mapa" class="mapa mt-4" role="region" aria-label="Mapa de la ruta"></div>
+
+        <h2 class="mt-5">Paradas</h2>
+        <ol class="pila" style="padding-left:1.2rem">
+            <li class="tarjeta" th:each="p : ${ruta.paradas}">
+                <strong th:text="${p.entidadNombre}"></strong>
+                <div class="suave chico" th:text="${p.direccion}"></div>
+                <ul class="mt-4">
+                    <li th:each="eRuta : ${p.entregas}" th:with="e=${entregasPorId[eRuta.entregaId]}">
+                        <span th:text="${eRuta.descripcion}"></span>
+                        <span th:if="${e != null}" class="estado" th:classappend="${@fmt.claseEstado(e.estado)}" th:text="${e.estadoEtiqueta}"></span>
+                        <form th:if="${e != null and e.estado == 'EN_TRASLADO'}" th:action="@{/chofer/entregas/{id}/no-recibida(id=${e.id})}"
+                              method="post" class="fila mt-4" data-confirmar="Se informará la entrega como no realizada.">
+                            <input type="hidden" name="rutaId" th:value="${ruta.id}">
+                            <label class="sr-only" th:for="'m-' + ${e.id}">Motivo</label>
+                            <input th:id="'m-' + ${e.id}" name="motivo" required placeholder="Motivo (ej.: nadie atendió)" style="max-width:320px">
+                            <button class="boton chico peligro" type="submit">No se pudo entregar</button>
+                        </form>
+                    </li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            const ruta = /*[[${ruta}]]*/ {};
+            const mapa = DonaTrack.mapa('mapa');
+            const dibujar = DonaTrack.rutasEnMapa(mapa);
+            dibujar([ruta]);
+            if (ruta.estado !== 'EN_CURSO') return;
+
+            const estado = document.getElementById('gps-estado');
+            const url = '/front-api/chofer/rutas/' + ruta.id + '/posiciones';
+            async function reportar(lat, lng, velocidad) {
+                const r = await fetch(url, {
+                    method: 'POST', credentials: 'same-origin',
+                    headers: Object.assign({ 'Content-Type': 'application/json' }, DonaTrack.csrf()),
+                    body: JSON.stringify({ latitud: lat, longitud: lng, velocidadKmh: velocidad || 0, registradaEn: new Date().toISOString() })
+                });
+                estado.textContent = r.ok ? 'Última posición enviada: ' + new Date().toLocaleTimeString('es-AR')
+                                          : 'No se pudo enviar la posición (' + r.status + ')';
+                ruta.ultimaPosicion = { latitud: lat, longitud: lng, velocidadKmh: velocidad || 0, registradaEn: new Date().toISOString() };
+                // Ojo: "[[" dentro de th:inline es sintaxis de Thymeleaf; por eso los espacios.
+                ruta.recorrido = (ruta.recorrido || []).concat([ [lat, lng] ]);
+                dibujar([ruta]);
+            }
+
+            // Opción 1: GPS real del dispositivo (requiere HTTPS o localhost)
+            let vigilancia = null;
+            document.getElementById('usar-gps').addEventListener('click', () => {
+                if (!navigator.geolocation) { estado.textContent = 'Este dispositivo no tiene geolocalización.'; return; }
+                vigilancia = navigator.geolocation.watchPosition(
+                    p => reportar(p.coords.latitude, p.coords.longitude, (p.coords.speed || 0) * 3.6),
+                    e => estado.textContent = 'No se pudo obtener la ubicación: ' + e.message,
+                    { enableHighAccuracy: true, maximumAge: 5000 });
+                estado.textContent = 'GPS activo.';
+            });
+
+            // Opción 2: simulación (recorre las paradas en línea recta, para demos sin moverse)
+            let simulacion = null;
+            document.getElementById('simular').addEventListener('click', function () {
+                if (simulacion) { clearInterval(simulacion); simulacion = null; this.setAttribute('aria-pressed', 'false'); this.textContent = '🧪 Simular recorrido'; return; }
+                const puntos = [ [-34.5986, -58.4202] ].concat(ruta.paradas.map(p => [p.latitud, p.longitud]));
+                let tramo = 0, paso = 0; const pasos = 20;
+                simulacion = setInterval(() => {
+                    if (tramo >= puntos.length - 1) { clearInterval(simulacion); simulacion = null; estado.textContent = 'Simulación completa: llegaste a la última parada.'; return; }
+                    const [a, b] = [puntos[tramo], puntos[tramo + 1]];
+                    const t = paso / pasos;
+                    reportar(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, 35 + Math.random() * 20);
+                    if (++paso > pasos) { paso = 0; tramo++; }
+                }, 3000);
+                this.setAttribute('aria-pressed', 'true'); this.textContent = '⏹ Detener simulación';
+            });
+            window.addEventListener('beforeunload', () => { if (vigilancia) navigator.geolocation.clearWatch(vigilancia); });
+        });
+    </script>
+</main>
+</body>
+</html>

@@ -1,0 +1,77 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: donaciones
+  profiles:
+    default: local
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 100
+        order_inserts: true
+        order_updates: true
+  artemis:
+    mode: native
+    broker-url: tcp://localhost:61616
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AUTH_URL:http://localhost:8085}/.well-known/jwks.json
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+
+donatrack:
+  donaciones:
+    url-front: ${FRONT_URL:http://localhost:8080}
+    url-logistica: ${LOGISTICA_URL:http://localhost:8082}
+    url-autenticacion: ${AUTH_URL:http://localhost:8085}
+    emails-administracion:
+      - admin@donatrack.org
+    suavizado-sub-atendidos: 0.1
+  seguridad:
+    cliente:
+      auth-url: ${AUTH_URL:http://localhost:8085}
+      id: donaciones
+      secreto: ${SECRETO_DONACIONES:secreto-donaciones-local}
+  cron:
+    # Horarios de baja carga (America/Argentina/Buenos_Aires)
+    matchmaking: "0 0 3 * * *"
+    inactividad: "0 0 9 * * *"
+
+management:
+  health:
+    jms:
+      enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:h2:file:./data/donaciones/db;MODE=PostgreSQL
+    username: sa
+    password:
+
+---
+spring:
+  config:
+    activate:
+      on-profile: postgres
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/donatrack_donaciones}
+    username: ${DB_USER:donatrack}
+    password: ${DB_PASSWORD:donatrack}

@@ -1,0 +1,87 @@
+@startuml casos-de-uso
+title DonaTrack — Diagrama general de casos de uso
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Visitante" as V
+actor "Persona donante" as D
+actor "Persona humana\ndonante" as DH
+actor "Entidad beneficiaria" as E
+actor "Persona administradora" as A
+actor "Chofer" as C
+actor "Planificador externo" as P <<sistema>>
+actor "Reloj (cron)" as R <<sistema>>
+DH -|> D
+
+rectangle DonaTrack {
+  usecase "Ver landing, galería\ny mapa de entregas" as UC1
+  usecase "Registrarse" as UC2
+  usecase "Iniciar sesión" as UC3
+  usecase "Activar cuenta" as UC4
+  usecase "Consultar/filtrar\nmis donaciones" as UC5
+  usecase "Navegar entidades\ny necesidades" as UC6
+  usecase "Consultar misiones,\ninsignias y métricas" as UC7
+  usecase "Seguir entregas\nen el mapa" as UC8
+  usecase "Recibir notificaciones" as UC9
+  usecase "Registrar necesidades" as UC10
+  usecase "Confirmar recepción\ncon fotos" as UC11
+  usecase "Informar entrega\nno recibida" as UC12
+  usecase "Registrar donante" as UC13
+  usecase "Registrar carga\nde donación" as UC14
+  usecase "Segmentar por\nsubcategoría" as UC14b
+  usecase "Marcar donación vencida" as UC15
+  usecase "Ejecutar matchmaking" as UC16
+  usecase "Confirmar entidad\nbeneficiaria final" as UC17
+  usecase "Administrar camiones" as UC18
+  usecase "Planificar rutas" as UC19
+  usecase "Registrar rutas\n(callback)" as UC19b
+  usecase "Monitorear camiones" as UC20
+  usecase "Ver ranking mensual" as UC21
+  usecase "Importar donantes CSV" as UC22
+  usecase "Iniciar ruta" as UC23
+  usecase "Reportar ubicación" as UC24
+  usecase "Avisar inactividad (20 días)" as UC25
+  usecase "Cerrar ranking del mes" as UC26
+  usecase "Evaluar misiones\ny otorgar insignias" as UC27
+}
+
+V --> UC1
+V --> UC2
+V --> UC3
+V --> UC4
+D --> UC5
+D --> UC6
+DH --> UC7
+D --> UC8
+D --> UC9
+E --> UC10
+E --> UC11
+E --> UC12
+E --> UC8
+E --> UC9
+A --> UC13
+A --> UC14
+A --> UC15
+A --> UC16
+A --> UC17
+A --> UC18
+A --> UC19
+A --> UC20
+A --> UC21
+A --> UC22
+C --> UC23
+C --> UC24
+C --> UC12
+P --> UC19b
+R --> UC16
+R --> UC19
+R --> UC25
+R --> UC26
+
+UC14 ..> UC14b : <<include>>
+UC17 ..> UC16 : <<include>>
+UC11 ..> UC27 : <<extend>>
+UC14 ..> UC27 : <<extend>>
+UC22 ..> UC13 : <<include>>
+UC19 ..> UC19b : <<extend>>
+@enduml

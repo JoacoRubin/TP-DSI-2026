@@ -1,0 +1,34 @@
+server:
+  port: 8080
+  servlet:
+    session:
+      timeout: 2h
+      cookie:
+        http-only: true
+        same-site: lax
+  error:
+    include-stacktrace: never
+
+spring:
+  application:
+    name: front
+  thymeleaf:
+    cache: false
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 40MB
+
+donatrack:
+  servicios:
+    donaciones: ${DONACIONES_URL:http://localhost:8081}
+    logistica: ${LOGISTICA_URL:http://localhost:8082}
+    incentivos: ${INCENTIVOS_URL:http://localhost:8083}
+    notificaciones: ${NOTIFICACIONES_URL:http://localhost:8084}
+    autenticacion: ${AUTH_URL:http://localhost:8085}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

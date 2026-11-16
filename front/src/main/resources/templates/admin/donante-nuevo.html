@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Registrar donante', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor" style="max-width:900px">
+        <nav class="migas" aria-label="Ubicación"><a href="/admin/donantes">Donantes</a> › Nuevo</nav>
+        <h1>Registrar persona donante</h1>
+        <div class="fila" role="tablist" aria-label="Tipo de persona">
+            <a class="boton chico" th:classappend="${tipo == 'juridica'} ? 'secundario'" href="/admin/donantes/nuevo?tipo=humana"
+               role="tab" th:attr="aria-selected=${tipo != 'juridica'}">Persona humana</a>
+            <a class="boton chico" th:classappend="${tipo != 'juridica'} ? 'secundario'" href="/admin/donantes/nuevo?tipo=juridica"
+               role="tab" th:attr="aria-selected=${tipo == 'juridica'}">Persona jurídica</a>
+        </div>
+        <div class="banner info mt-4">Al registrarla, le enviamos un correo de bienvenida con un enlace para activar su cuenta.
+            Después vas a poder cargar su donación.</div>
+        <form th:action="@{/admin/donantes/{t}(t=${tipo == 'juridica' ? 'juridica' : 'humana'})}" method="post">
+            <th:block th:if="${tipo != 'juridica'}" th:replace="~{fragmentos/campos :: personaHumana(${form})}"></th:block>
+            <th:block th:if="${tipo == 'juridica'}" th:replace="~{fragmentos/campos :: personaJuridica(${form})}"></th:block>
+            <th:block th:replace="~{fragmentos/campos :: direccion(${form}, false)}"></th:block>
+            <th:block th:replace="~{fragmentos/campos :: contacto(${form})}"></th:block>
+            <div class="acciones">
+                <a class="boton fantasma" href="/admin/donantes">Cancelar</a>
+                <button class="boton" type="submit"><span class="spinner" aria-hidden="true"></span>Registrar y cargar donación</button>
+            </div>
+        </form>
+    </div>
+</main>
+</body>
+</html>

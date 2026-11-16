@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Mi espacio', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor">
+        <h1>¡Hola, <span th:text="${usuario.nombre()}"></span>!</h1>
+        <p class="suave">Este es tu espacio para seguir el recorrido de tus donaciones.</p>
+
+        <div class="grilla" th:if="${metricas != null}">
+            <div class="tarjeta kpi"><span class="valor" th:text="${metricas.totalDonaciones}"></span><span class="etiqueta">donaciones realizadas</span></div>
+            <div class="tarjeta kpi"><span class="valor" th:text="${metricas.totalBienes}"></span><span class="etiqueta">bienes donados</span></div>
+            <div class="tarjeta kpi"><span class="valor" th:text="${metricas.organizacionesAyudadas}"></span><span class="etiqueta">organizaciones ayudadas</span></div>
+            <div class="tarjeta kpi"><span class="valor" th:text="${metricas.categoria}"></span><span class="etiqueta">tu categoría</span></div>
+        </div>
+
+        <div class="grilla mt-5">
+            <a class="tarjeta tarjeta-enlace" href="/donante/donaciones"><h2>📦 Mis donaciones</h2><p class="suave mb-0">Estado e historial de cada una.</p></a>
+            <a class="tarjeta tarjeta-enlace" href="/donante/seguimiento"><h2>🚚 Seguimiento</h2><p class="suave mb-0">Mirá el camión en el mapa.</p></a>
+            <a class="tarjeta tarjeta-enlace" href="/donante/entidades"><h2>🏫 Entidades</h2><p class="suave mb-0">Conocé quiénes necesitan ayuda.</p></a>
+            <a class="tarjeta tarjeta-enlace" href="/donante/incentivos" th:if="${usuario.esDonanteHumano()}"><h2>🏅 Incentivos</h2><p class="suave mb-0">Misiones e insignias.</p></a>
+        </div>
+
+        <section class="seccion">
+            <h2>Últimas donaciones</h2>
+            <div class="tabla-envoltura" th:unless="${#lists.isEmpty(recientes)}">
+                <table class="apilable">
+                    <thead><tr><th>Donación</th><th>Fecha</th><th>Estado</th><th><span class="sr-only">Acciones</span></th></tr></thead>
+                    <tbody>
+                    <tr th:each="d : ${recientes}">
+                        <td data-etiqueta="Donación" th:text="${d.descripcionCorta}"></td>
+                        <td data-etiqueta="Fecha" th:text="${@fmt.fecha(d.registradaEn)}"></td>
+                        <td data-etiqueta="Estado"><span class="estado" th:classappend="${@fmt.claseEstado(d.estado)}" th:text="${d.estadoEtiqueta}"></span></td>
+                        <td><a th:href="@{/donante/donaciones/{id}(id=${d.id})}">Ver detalle</a></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="vacio tarjeta" th:if="${#lists.isEmpty(recientes)}">Todavía no registraste donaciones. Acercate al depósito de Medrano 951 🙌</p>
+        </section>
+    </div>
+</main>
+</body>
+</html>

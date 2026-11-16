@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Tabla de necesidades propuestas por los algoritmos, con acción de confirmar destino -->
+<div th:fragment="tabla(propuestas, donacionId, etiquetaPuntaje)" class="tabla-envoltura" th:unless="${#lists.isEmpty(propuestas)}">
+    <table class="apilable">
+        <thead><tr><th>#</th><th>Entidad</th><th>Necesidad</th><th th:text="${etiquetaPuntaje}"></th><th><span class="sr-only">Acción</span></th></tr></thead>
+        <tbody>
+        <tr th:each="p : ${propuestas}">
+            <td data-etiqueta="Posición" th:text="${p.posicion}"></td>
+            <td data-etiqueta="Entidad"><strong th:text="${p.entidad}"></strong></td>
+            <td data-etiqueta="Necesidad">
+                <span th:text="${p.descripcion}"></span>
+                <div class="chico suave" th:text="(${p.tipo == 'EXTRAORDINARIA'} ? 'Extraordinaria' : 'Recurrente') + ' · faltan ' + ${p.pendiente} + ' ' + ${p.unidad}"></div>
+            </td>
+            <td data-etiqueta="Puntaje"><strong th:text="${@fmt.porcentaje(p.puntaje)}"></strong></td>
+            <td>
+                <form th:action="@{/admin/asignaciones/{id}/confirmacion(id=${donacionId})}" method="post" class="mb-0"
+                      th:attr="data-confirmar='Confirmar ' + ${p.entidad} + ' como destino final. Se notificará a la entidad y a la persona donante.'">
+                    <input type="hidden" name="necesidadId" th:value="${p.necesidadId}">
+                    <button class="boton chico" type="submit">Elegir</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

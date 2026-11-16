@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Notificaciones', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor" style="max-width:860px">
+        <h1>Notificaciones</h1>
+        <p class="suave">Copia de los avisos que te enviamos por tu medio preferido.</p>
+        <ul style="list-style:none;padding:0" class="pila">
+            <li class="tarjeta" th:each="n : ${notificaciones}" th:style="${n.leida} ? 'opacity:.75' : 'border-left:5px solid var(--c-primario)'">
+                <div class="fila-entre">
+                    <strong th:text="${n.asunto}"></strong>
+                    <span class="chico suave" th:text="${@fmt.fechaHora(n.creadaEn)}"></span>
+                </div>
+                <p class="mt-4" th:text="${n.mensaje}"></p>
+                <div class="fila-entre">
+                    <span class="chico suave" th:text="'Enviada por ' + ${n.medio ?: '—'}"></span>
+                    <form th:unless="${n.leida}" th:action="@{/notificaciones/{id}/leida(id=${n.id})}" method="post" class="mb-0">
+                        <button class="boton chico fantasma" type="submit">Marcar como leída</button>
+                    </form>
+                </div>
+            </li>
+        </ul>
+        <p class="vacio tarjeta" th:if="${#lists.isEmpty(notificaciones)}">No tenés notificaciones.</p>
+    </div>
+</main>
+</body>
+</html>

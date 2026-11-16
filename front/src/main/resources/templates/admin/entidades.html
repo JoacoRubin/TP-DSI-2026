@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Entidades beneficiarias', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor">
+        <div class="fila-entre">
+            <h1 class="mb-0">Entidades beneficiarias</h1>
+            <a class="boton" href="/admin/entidades/nueva">➕ Registrar entidad</a>
+        </div>
+        <form action="/admin/entidades" method="get" class="fila mt-5" role="search">
+            <label for="texto" class="sr-only">Buscar</label>
+            <input id="texto" name="texto" th:value="${texto}" placeholder="Buscar por nombre…" style="max-width:420px">
+            <button class="boton" type="submit">Buscar</button>
+        </form>
+        <div class="tabla-envoltura mt-4">
+            <table class="apilable">
+                <thead><tr><th>Entidad</th><th>Dirección</th><th>Contacto</th><th>Alta</th></tr></thead>
+                <tbody>
+                <tr th:each="e : ${entidades}">
+                    <td data-etiqueta="Entidad"><strong th:text="${e.razonSocial}"></strong></td>
+                    <td data-etiqueta="Dirección" th:text="${e.direccionFormateada}"></td>
+                    <td data-etiqueta="Contacto"><span th:text="${e.emails[0]}"></span><div class="chico suave" th:text="${e.telefono}"></div></td>
+                    <td data-etiqueta="Alta" th:text="${@fmt.fecha(e.fechaAlta)}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+</body>
+</html>

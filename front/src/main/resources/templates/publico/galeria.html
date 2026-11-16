@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Galería de entregas', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor">
+        <h1>Galería de entregas</h1>
+        <p class="suave">Fotos cargadas por las entidades beneficiarias al confirmar la recepción. No se muestran datos personales de quienes donan.</p>
+        <div class="grilla" th:unless="${#lists.isEmpty(entregas)}">
+            <figure class="tarjeta foto-tarjeta" style="margin:0" th:each="e : ${entregas}">
+                <img th:src="@{/fotos/logistica/{n}(n=${#strings.substringAfter(e.fotos[0], '/api/fotos/')})}" loading="lazy"
+                     th:alt="'Entrega de ' + ${e.descripcion} + ' en ' + ${e.entidadNombre}">
+                <figcaption class="cuerpo">
+                    <strong th:text="${e.descripcion}"></strong>
+                    <div class="suave chico" th:text="${e.entidadNombre} + ' · ' + ${@fmt.fecha(e.entregadaEn)}"></div>
+                    <div class="chico" th:if="${#lists.size(e.fotos) > 1}" th:text="'+' + ${#lists.size(e.fotos) - 1} + ' fotos más'"></div>
+                </figcaption>
+            </figure>
+        </div>
+        <p class="vacio" th:if="${#lists.isEmpty(entregas)}">Aún no hay fotos de entregas publicadas.</p>
+    </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Registrar donación', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor">
+        <nav class="migas" aria-label="Ubicación"><a href="/admin/donaciones">Donaciones</a> › Nueva</nav>
+        <h1>Registrar donación</h1>
+
+        <!-- Paso 1: persona donante -->
+        <section class="tarjeta" aria-labelledby="paso1">
+            <h2 id="paso1">1. Persona donante</h2>
+            <div th:if="${donante != null}" class="fila-entre">
+                <div>
+                    <strong th:text="${donante.nombreVisible}"></strong>
+                    <div class="chico suave" th:text="${donante.tipoDocumento} + ' ' + ${donante.numeroDocumento} + ' · ' + ${donante.email}"></div>
+                </div>
+                <a class="boton chico fantasma" href="/admin/donaciones/nueva">Cambiar</a>
+            </div>
+            <th:block th:if="${donante == null}">
+                <form action="/admin/donaciones/nueva" method="get" class="fila" role="search">
+                    <label for="buscar" class="sr-only">Buscar donante</label>
+                    <input id="buscar" name="buscar" th:value="${buscar}" placeholder="Nombre, email o documento" style="max-width:420px" autofocus>
+                    <button class="boton" type="submit">Buscar</button>
+                    <a class="boton secundario" href="/admin/donantes/nuevo">No tiene cuenta: registrarla</a>
+                </form>
+                <ul class="mt-4" style="list-style:none;padding:0" th:if="${candidatos != null}">
+                    <li th:each="c : ${candidatos}" class="fila-entre" style="border-bottom:1px solid var(--c-borde-suave);padding:.5rem 0">
+                        <span><strong th:text="${c.nombreVisible}"></strong> <span class="chico suave" th:text="${c.email}"></span></span>
+                        <a class="boton chico" th:href="@{/admin/donaciones/nueva(donanteId=${c.id})}">Elegir</a>
+                    </li>
+                    <li th:if="${#lists.isEmpty(candidatos)}" class="suave">No encontramos coincidencias.</li>
+                </ul>
+            </th:block>
+        </section>
+
+        <!-- Paso 2: carga única de bienes -->
+        <form th:if="${donante != null}" th:action="@{/admin/donaciones}" method="post" enctype="multipart/form-data" class="mt-5" id="form-carga">
+            <input type="hidden" name="donanteId" th:value="${donante.id}">
+            <section class="tarjeta" aria-labelledby="paso2">
+                <h2 id="paso2">2. Bienes que trae al depósito</h2>
+                <div class="banner info">Cargá <strong>todos</strong> los bienes juntos: el sistema los separa automáticamente en
+                    donaciones por subcategoría (y por vencimiento o estado nuevo/usado cuando corresponde).</div>
+                <div class="campo">
+                    <label for="descripcionGeneral">Descripción general</label>
+                    <input id="descripcionGeneral" name="descripcionGeneral" th:value="${form['descripcionGeneral']}"
+                           placeholder="Ej.: Mudanza de oficina corporativa">
+                </div>
+
+                <div id="bienes" class="pila"></div>
+                <button type="button" class="boton secundario mt-4" id="agregar-bien">➕ Agregar otro bien</button>
+            </section>
+            <div class="acciones">
+                <a class="boton fantasma" href="/admin/donaciones">Cancelar</a>
+                <button class="boton" type="submit"><span class="spinner" aria-hidden="true"></span>Registrar carga</button>
+            </div>
+        </form>
+
+        <template id="plantilla-bien">
+            <fieldset class="bien">
+                <legend>Bien <span data-numero></span></legend>
+                <input type="hidden" data-campo="indice">
+                <div class="campos">
+                    <div class="campo">
+                        <label data-para="descripcion" class="obligatorio">Descripción</label>
+                        <input data-campo="descripcion" required placeholder="Ej.: Silla de oficina">
+                    </div>
+                    <div class="campo">
+                        <label data-para="subcategoriaId" class="obligatorio">Subcategoría</label>
+                        <select data-campo="subcategoriaId" required>
+                            <option value="">Elegí…</option>
+                            <optgroup th:each="c : ${categorias}" th:label="${c.nombre}"
+                                      th:attr="data-perecedera=${c.perecedera},data-estado-uso=${c.requiereEstadoUso}">
+                                <option th:each="s : ${c.subcategorias}" th:value="${s.id}" th:text="${s.nombre}"></option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label data-para="cantidad" class="obligatorio">Cantidad</label>
+                        <input data-campo="cantidad" type="number" min="1" required>
+                    </div>
+                    <div class="campo">
+                        <label data-para="unidad">Unidad</label>
+                        <input data-campo="unidad" value="unidades" list="lista-unidades">
+                    </div>
+                    <div class="campo" data-si="perecedera" hidden>
+                        <label data-para="fechaVencimiento" class="obligatorio">Vencimiento</label>
+                        <input data-campo="fechaVencimiento" type="date">
+                    </div>
+                    <div class="campo" data-si="estadoUso" hidden>
+                        <label data-para="estadoUso" class="obligatorio">Estado</label>
+                        <select data-campo="estadoUso">
+                            <option value="">Elegí…</option>
+                            <option value="NUEVO">Nuevo</option>
+                            <option value="USADO">Usado</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label data-para="pesoKg">Peso total (kg) <span class="tip" tabindex="0">?<span class="tip-texto" role="tooltip">Estimado. Se usa para cargar los camiones. Si lo dejás vacío lo estimamos.</span></span></label>
+                        <input data-campo="pesoKg" type="number" min="0" step="0.1">
+                    </div>
+                    <div class="campo">
+                        <label data-para="volumenM3">Volumen (m³)</label>
+                        <input data-campo="volumenM3" type="number" min="0" step="0.01">
+                    </div>
+                    <div class="campo">
+                        <label data-para="foto">Foto (opcional)</label>
+                        <input data-campo="foto" type="file" accept="image/jpeg,image/png,image/webp">
+                    </div>
+                </div>
+                <div class="acciones mt-0"><button type="button" class="boton chico fantasma" data-quitar>Quitar este bien</button></div>
+            </fieldset>
+        </template>
+        <datalist id="lista-unidades"><option value="unidades"><option value="kg"><option value="paquetes"><option value="litros"><option value="cajas"></datalist>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const contenedor = document.getElementById('bienes');
+            const plantilla = document.getElementById('plantilla-bien');
+            if (!contenedor) return;
+            let siguiente = 0;
+
+            function renumerar() {
+                contenedor.querySelectorAll('fieldset.bien').forEach((f, i) => f.querySelector('[data-numero]').textContent = i + 1);
+                const quitar = contenedor.querySelectorAll('[data-quitar]');
+                quitar.forEach(b => b.hidden = quitar.length === 1);
+            }
+
+            function actualizarCondicionales(fila) {
+                const sel = fila.querySelector('[data-campo=subcategoriaId]');
+                const grupo = sel.selectedOptions[0] && sel.selectedOptions[0].parentElement.tagName === 'OPTGROUP'
+                    ? sel.selectedOptions[0].parentElement : null;
+                const perecedera = grupo && grupo.dataset.perecedera === 'true';
+                const estadoUso = grupo && grupo.dataset.estadoUso === 'true';
+                const fv = fila.querySelector('[data-si=perecedera]'), eu = fila.querySelector('[data-si=estadoUso]');
+                fv.hidden = !perecedera; fv.querySelector('input').required = perecedera;
+                eu.hidden = !estadoUso; eu.querySelector('select').required = estadoUso;
+            }
+
+            function agregar() {
+                const i = siguiente++;
+                const fila = plantilla.content.firstElementChild.cloneNode(true);
+                fila.querySelectorAll('[data-campo]').forEach(c => {
+                    const campo = c.dataset.campo;
+                    c.id = 'bien-' + i + '-' + campo;
+                    c.name = campo === 'foto' ? 'foto_' + i : 'bienes[' + i + '].' + campo;
+                    if (campo === 'indice') c.value = i;
+                });
+                fila.querySelectorAll('[data-para]').forEach(l => l.htmlFor = 'bien-' + i + '-' + l.dataset.para);
+                fila.querySelector('[data-campo=subcategoriaId]').addEventListener('change', () => actualizarCondicionales(fila));
+                fila.querySelector('[data-quitar]').addEventListener('click', () => { fila.remove(); renumerar(); });
+                contenedor.appendChild(fila);
+                renumerar();
+                return fila;
+            }
+
+            document.getElementById('agregar-bien').addEventListener('click', () => agregar().querySelector('input').focus());
+            agregar();
+        });
+    </script>
+</main>
+</body>
+</html>

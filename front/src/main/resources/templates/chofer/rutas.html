@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Mis rutas', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor" style="max-width:720px">
+        <h1>Mis rutas</h1>
+        <p class="suave">Camión <strong th:text="${usuario.referencia()}"></strong></p>
+        <div class="pila">
+            <a class="tarjeta tarjeta-enlace" th:each="r : ${rutas}" th:href="@{/chofer/rutas/{id}(id=${r.id})}">
+                <div class="fila-entre">
+                    <h2 class="mb-0" th:text="'Ruta del ' + ${@fmt.fecha(r.fecha)}"></h2>
+                    <span class="estado" th:classappend="${@fmt.claseEstado(r.estado)}" th:text="${@fmt.estado(r.estado)}"></span>
+                </div>
+                <p class="suave mb-0 mt-4" th:text="${#lists.size(r.paradas)} + ' paradas · ' + ${r.totalEntregas} + ' entregas'"></p>
+            </a>
+        </div>
+        <p class="vacio tarjeta" th:if="${#lists.isEmpty(rutas)}">No tenés rutas asignadas. 🚚💤</p>
+    </div>
+</main>
+</body>
+</html>

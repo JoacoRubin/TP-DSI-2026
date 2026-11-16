@@ -1,0 +1,89 @@
+{
+  "name": "DonaTrack - Difusión de insignias",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "donatrack-insignia",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "1b0f5a1e-0001-4c1a-9c11-000000000001",
+      "name": "Webhook: insignia obtenida",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "donatrack-insignia"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            { "name": "texto", "value": "={{ $json.body.texto }}" },
+            { "name": "insignia", "value": "={{ $json.body.icono }} {{ $json.body.insignia }}" },
+            { "name": "nombre", "value": "={{ $json.body.nombre }}" },
+            { "name": "categoria", "value": "={{ $json.body.categoria }}" },
+            { "name": "imagenUrl", "value": "=https://placehold.co/1080x1080/0f766e/ffffff/png?text={{ encodeURIComponent($json.body.insignia + '\\n' + $json.body.nombre) }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1b0f5a1e-0002-4c1a-9c11-000000000002",
+      "name": "Armar publicación",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.imagenUrl }}",
+        "options": { "response": { "response": { "responseFormat": "file" } } }
+      },
+      "id": "1b0f5a1e-0003-4c1a-9c11-000000000003",
+      "name": "Generar imagen de la insignia",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "text": "={{ $('Armar publicación').item.json.texto }}",
+        "additionalFields": {}
+      },
+      "id": "1b0f5a1e-0004-4c1a-9c11-000000000004",
+      "name": "Publicar en X (Twitter)",
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 2,
+      "position": [960, 220],
+      "credentials": { "twitterOAuth2Api": { "id": "CONFIGURAR", "name": "Cuenta de UTN Solidaria" } }
+    },
+    {
+      "parameters": {
+        "postAs": "organization",
+        "organization": "CONFIGURAR",
+        "text": "={{ $('Armar publicación').item.json.texto }}",
+        "shareMediaCategory": "IMAGE",
+        "additionalFields": {}
+      },
+      "id": "1b0f5a1e-0005-4c1a-9c11-000000000005",
+      "name": "Publicar en LinkedIn",
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [960, 400],
+      "credentials": { "linkedInOAuth2Api": { "id": "CONFIGURAR", "name": "UTN Solidaria" } }
+    }
+  ],
+  "connections": {
+    "Webhook: insignia obtenida": { "main": [[{ "node": "Armar publicación", "type": "main", "index": 0 }]] },
+    "Armar publicación": { "main": [[{ "node": "Generar imagen de la insignia", "type": "main", "index": 0 }]] },
+    "Generar imagen de la insignia": {
+      "main": [[
+        { "node": "Publicar en X (Twitter)", "type": "main", "index": 0 },
+        { "node": "Publicar en LinkedIn", "type": "main", "index": 0 }
+      ]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "meta": { "templateCredsSetupCompleted": false }
+}

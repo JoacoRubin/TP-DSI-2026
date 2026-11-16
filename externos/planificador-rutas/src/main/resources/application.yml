@@ -1,0 +1,9 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: planificador-rutas-externo
+
+planificador:
+  demora-ms: 2000

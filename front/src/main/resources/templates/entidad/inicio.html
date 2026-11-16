@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Mi entidad', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor">
+        <h1 th:text="${entidad.razonSocial}"></h1>
+        <p class="suave" th:text="${entidad.direccionFormateada}"></p>
+        <div class="grilla">
+            <div class="tarjeta kpi"><span class="valor" th:text="${#lists.size(necesidades)}"></span><span class="etiqueta">necesidades activas</span></div>
+            <div class="tarjeta kpi"><span class="valor" th:text="${#lists.size(entregas.?[estado == 'EN_TRASLADO'])}"></span><span class="etiqueta">entregas en camino</span></div>
+            <div class="tarjeta kpi"><span class="valor" th:text="${#lists.size(entregas.?[estado == 'ENTREGADA'])}"></span><span class="etiqueta">donaciones recibidas</span></div>
+        </div>
+        <div class="banner aviso mt-5" th:if="${#lists.size(entregas.?[estado == 'EN_TRASLADO']) > 0}">
+            🚚 Tenés donaciones en camino. <a href="/entidad/seguimiento">Seguí el camión</a> y
+            <a href="/entidad/donaciones">confirmá la recepción</a> cuando lleguen.
+        </div>
+        <div class="grilla mt-5">
+            <a class="tarjeta tarjeta-enlace" href="/entidad/necesidades"><h2>📝 Necesidades</h2><p class="suave mb-0">Publicá lo que necesitan.</p></a>
+            <a class="tarjeta tarjeta-enlace" href="/entidad/donaciones"><h2>📦 Donaciones</h2><p class="suave mb-0">Estado y confirmación de recepción.</p></a>
+            <a class="tarjeta tarjeta-enlace" href="/entidad/seguimiento"><h2>🗺️ Seguimiento</h2><p class="suave mb-0">Camiones en camino.</p></a>
+        </div>
+    </div>
+</main>
+</body>
+</html>

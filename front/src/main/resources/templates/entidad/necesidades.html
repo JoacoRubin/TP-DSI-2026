@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Necesidades', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor">
+        <h1>Necesidades materiales</h1>
+        <div class="grilla-2">
+            <section aria-labelledby="t-activas">
+                <h2 id="t-activas">Publicadas</h2>
+                <div class="tabla-envoltura" th:unless="${#lists.isEmpty(necesidades)}">
+                    <table class="apilable">
+                        <thead><tr><th>Necesidad</th><th>Tipo</th><th>Avance</th><th><span class="sr-only">Acciones</span></th></tr></thead>
+                        <tbody>
+                        <tr th:each="n : ${necesidades}">
+                            <td data-etiqueta="Necesidad"><strong th:text="${n.subcategoria}"></strong><div class="chico suave" th:text="${n.descripcion}"></div></td>
+                            <td data-etiqueta="Tipo">
+                                <span th:text="${n.tipo == 'EXTRAORDINARIA' ? 'Extraordinaria' : 'Recurrente'}"></span>
+                                <div class="chico suave" th:if="${n.periodicidad != null}" th:text="${n.periodicidad == 'SEMANAL' ? 'Semanal' : 'Mensual'}"></div>
+                            </td>
+                            <td data-etiqueta="Avance">
+                                <span th:text="${n.cantidadRecibida} + '/' + ${n.cantidadRequerida} + ' ' + ${n.unidad}"></span>
+                                <div class="chico suave" th:if="${n.cantidadComprometida > 0}" th:text="${n.cantidadComprometida} + ' en camino'"></div>
+                                <span class="estado exito" th:if="${n.satisfecha}">Cubierta</span>
+                            </td>
+                            <td>
+                                <form th:action="@{/entidad/necesidades/{id}/baja(id=${n.id})}" method="post" class="mb-0"
+                                      data-confirmar="La necesidad dejará de recibir nuevas asignaciones.">
+                                    <button class="boton chico fantasma" type="submit">Dar de baja</button>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="vacio tarjeta" th:if="${#lists.isEmpty(necesidades)}">Todavía no publicaste necesidades.</p>
+            </section>
+
+            <section class="tarjeta" aria-labelledby="t-nueva">
+                <h2 id="t-nueva">Nueva necesidad</h2>
+                <form th:action="@{/entidad/necesidades}" method="post">
+                    <fieldset style="border:0;padding:0;margin:0">
+                        <legend class="etiqueta-campo obligatorio">Tipo de necesidad</legend>
+                        <label class="check"><input type="radio" name="tipo" value="RECURRENTE" required
+                                                    th:checked="${form['tipo'] == null or form['tipo'] == 'RECURRENTE'}">
+                            <span>Recurrente <span class="chico suave">(consumo habitual)</span></span></label>
+                        <label class="check"><input type="radio" name="tipo" value="EXTRAORDINARIA" th:checked="${form['tipo'] == 'EXTRAORDINARIA'}">
+                            <span>Extraordinaria <span class="chico suave">(emergencia o situación puntual)</span></span></label>
+                    </fieldset>
+                    <div class="campo mt-4">
+                        <label for="subcategoria" class="obligatorio">¿Qué necesitan?</label>
+                        <select th:replace="~{fragmentos/subcategorias :: selector('subcategoria', 'subcategoriaId', ${categorias}, ${form['subcategoriaId']}, true)}"></select>
+                    </div>
+                    <div class="campo">
+                        <label for="descripcion" class="obligatorio">Descripción</label>
+                        <textarea id="descripcion" name="descripcion" required maxlength="500" th:text="${form['descripcion']}"
+                                  placeholder="Ej.: 30 sillas para reponer las del aula inundada" aria-describedby="desc-ayuda"></textarea>
+                        <span id="desc-ayuda" class="ayuda">Sé específico: esto ayuda al algoritmo a encontrar la donación ideal.</span>
+                    </div>
+                    <div class="campos">
+                        <div class="campo">
+                            <label for="cantidad" class="obligatorio">Cantidad</label>
+                            <input id="cantidad" name="cantidad" type="number" min="1" required th:value="${form['cantidad']}">
+                        </div>
+                        <div class="campo">
+                            <label for="unidad">Unidad</label>
+                            <input id="unidad" name="unidad" th:value="${form['unidad'] ?: 'unidades'}" list="unidades">
+                            <datalist id="unidades"><option value="unidades"><option value="kg"><option value="paquetes"><option value="litros"></datalist>
+                        </div>
+                        <div class="campo">
+                            <label for="periodicidad">Período <span class="tip" tabindex="0">?<span class="tip-texto" role="tooltip">Sólo para recurrentes: cada cuánto se renueva la cantidad.</span></span></label>
+                            <select id="periodicidad" name="periodicidad">
+                                <option value="SEMANAL" th:selected="${form['periodicidad'] == 'SEMANAL'}">Semanal</option>
+                                <option value="MENSUAL" th:selected="${form['periodicidad'] == 'MENSUAL'}">Mensual</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="boton" type="submit" style="width:100%"><span class="spinner" aria-hidden="true"></span>Publicar necesidad</button>
+                </form>
+            </section>
+        </div>
+    </div>
+</main>
+</body>
+</html>

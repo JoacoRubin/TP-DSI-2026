@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Progreso de importación', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor" style="max-width:900px">
+        <nav class="migas" aria-label="Ubicación"><a href="/admin/importaciones">Importaciones</a> › <span th:text="${importacion.archivo}"></span></nav>
+        <h1>Importación de <span th:text="${importacion.archivo}"></span></h1>
+        <div class="tarjeta" aria-live="polite">
+            <div class="fila-entre">
+                <strong id="estado" th:text="${importacion.estado}"></strong>
+                <span class="spinner" id="girando" aria-hidden="true" th:if="${importacion.estado == 'EN_CURSO'}" style="color:var(--c-primario)"></span>
+            </div>
+            <div class="grilla mt-4">
+                <div class="kpi"><span class="valor" id="procesadas" th:text="${importacion.filasProcesadas}"></span><span class="etiqueta">filas procesadas</span></div>
+                <div class="kpi"><span class="valor" id="creados" th:text="${importacion.creados}"></span><span class="etiqueta">donantes creados</span></div>
+                <div class="kpi"><span class="valor" id="actualizados" th:text="${importacion.actualizados}"></span><span class="etiqueta">actualizados</span></div>
+                <div class="kpi"><span class="valor" id="errores" th:text="${importacion.conError}" style="color:var(--c-error)"></span><span class="etiqueta">con error</span></div>
+            </div>
+            <p class="banner error mt-4" id="fallo" th:if="${importacion.detalleFallo != null}" th:text="${importacion.detalleFallo}"></p>
+        </div>
+        <section class="mt-5" aria-labelledby="t-err">
+            <h2 id="t-err">Filas con error</h2>
+            <div class="tabla-envoltura">
+                <table>
+                    <thead><tr><th>Línea</th><th>Detalle</th></tr></thead>
+                    <tbody id="tabla-errores">
+                    <tr th:each="e : ${importacion.errores}"><td th:text="${e.linea}"></td><td th:text="${e.mensaje}"></td></tr>
+                    <tr th:if="${#lists.isEmpty(importacion.errores)}"><td colspan="2" class="vacio">Sin errores.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            const id = /*[[${importacion.id}]]*/ '';
+            let estado = /*[[${importacion.estado}]]*/ 'EN_CURSO';
+            if (estado !== 'EN_CURSO') return;
+            const t = setInterval(async () => {
+                const i = await DonaTrack.json('/front-api/importaciones/' + id);
+                if (!i) return;
+                document.getElementById('procesadas').textContent = i.filasProcesadas;
+                document.getElementById('creados').textContent = i.creados;
+                document.getElementById('actualizados').textContent = i.actualizados;
+                document.getElementById('errores').textContent = i.conError;
+                document.getElementById('estado').textContent = i.estado;
+                if (i.estado !== 'EN_CURSO') {
+                    clearInterval(t);
+                    document.getElementById('girando')?.remove();
+                    DonaTrack.toast('Importación ' + (i.estado === 'FINALIZADA' ? 'finalizada' : 'fallida'), i.estado === 'FINALIZADA' ? 'exito' : 'error');
+                    setTimeout(() => location.reload(), 1500);
+                }
+            }, 1500);
+        });
+    </script>
+</main>
+</body>
+</html>

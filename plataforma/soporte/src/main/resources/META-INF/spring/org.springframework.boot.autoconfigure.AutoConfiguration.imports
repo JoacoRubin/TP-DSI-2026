@@ -1,0 +1,3 @@
+ar.utn.donatrack.soporte.mensajeria.MensajeriaAutoConfiguration
+ar.utn.donatrack.soporte.seguridad.SeguridadAutoConfiguration
+ar.utn.donatrack.soporte.web.WebAutoConfiguration

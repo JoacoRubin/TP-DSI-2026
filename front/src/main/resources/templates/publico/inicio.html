@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Inicio', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <section class="heroe" aria-labelledby="titulo-heroe">
+        <div class="contenedor">
+            <h1 id="titulo-heroe">Cada donación, con nombre, recorrido y destino.</h1>
+            <p>DonaTrack organiza, registra y sigue las donaciones de UTN Solidaria desde que llegan al depósito
+                hasta que una entidad beneficiaria las recibe. Transparencia para quienes donan, eficiencia para quienes ayudan.</p>
+            <div class="fila">
+                <a class="boton" href="/registro" sec:authorize="isAnonymous()">Quiero donar o recibir</a>
+                <a class="boton secundario" href="/login" sec:authorize="isAnonymous()">Ya tengo cuenta</a>
+                <a class="boton" sec:authorize="isAuthenticated()" href="/notificaciones">Ver mis novedades</a>
+                <a class="boton secundario" href="/galeria">Ver entregas realizadas</a>
+            </div>
+        </div>
+    </section>
+
+    <div class="contenedor">
+        <section class="seccion" aria-labelledby="titulo-objetivos">
+            <h2 id="titulo-objetivos">Nuestros objetivos</h2>
+            <div class="grilla">
+                <article class="tarjeta">
+                    <h3>📦 Ordenar</h3>
+                    <p class="mb-0">Un único registro de cada bien recibido, segmentado por subcategoría, sin duplicados ni planillas sueltas.</p>
+                </article>
+                <article class="tarjeta">
+                    <h3>🎯 Asignar mejor</h3>
+                    <p class="mb-0">Algoritmos que cruzan donaciones con necesidades reales, priorizando a las entidades menos atendidas.</p>
+                </article>
+                <article class="tarjeta">
+                    <h3>🚚 Seguir cada entrega</h3>
+                    <p class="mb-0">Rutas planificadas y camiones visibles en el mapa en tiempo real, con comprobante de entrega.</p>
+                </article>
+                <article class="tarjeta">
+                    <h3>🤝 Generar confianza</h3>
+                    <p class="mb-0">Fotos de las entregas y estado de cada donación, para que quien dona sepa adónde llegó su ayuda.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="seccion" aria-labelledby="titulo-impacto">
+            <h2 id="titulo-impacto">El último mes</h2>
+            <div class="grilla">
+                <div class="tarjeta kpi"><span class="valor" th:text="${entregadasMes}">0</span><span class="etiqueta">donaciones entregadas</span></div>
+                <div class="tarjeta kpi"><span class="valor" th:text="${entidadesMes}">0</span><span class="etiqueta">entidades beneficiadas</span></div>
+            </div>
+        </section>
+
+        <section class="seccion" aria-labelledby="titulo-destacadas">
+            <div class="fila-entre">
+                <h2 id="titulo-destacadas" class="mb-0">Donaciones destacadas del último mes</h2>
+                <a href="/mapa">Ver todas en el mapa →</a>
+            </div>
+            <div class="grilla mt-4" th:unless="${#lists.isEmpty(destacadas)}">
+                <article class="tarjeta foto-tarjeta" th:each="e : ${destacadas}">
+                    <img th:if="${!#lists.isEmpty(e.fotos)}" th:src="@{/fotos/logistica/{n}(n=${#strings.substringAfter(e.fotos[0], '/api/fotos/')})}"
+                         th:alt="'Foto de la entrega de ' + ${e.descripcion} + ' a ' + ${e.entidadNombre}" loading="lazy">
+                    <div class="cuerpo">
+                        <h3 th:text="${e.descripcion}">Donación</h3>
+                        <p class="suave mb-0">
+                            Recibida por <strong th:text="${e.entidadNombre}"></strong>
+                            el <span th:text="${@fmt.fecha(e.entregadaEn)}"></span>
+                        </p>
+                    </div>
+                </article>
+            </div>
+            <p class="vacio" th:if="${#lists.isEmpty(destacadas)}">Todavía no hay entregas este mes. ¡La próxima puede ser la tuya!</p>
+        </section>
+
+        <section class="seccion" aria-labelledby="titulo-podio" th:if="${podio != null and !#lists.isEmpty(podio.entradas)}">
+            <h2 id="titulo-podio">Donantes más activos</h2>
+            <p class="suave">Ranking por misiones cumplidas en <span th:text="${@fmt.mes(podio.id)}"></span>.</p>
+            <ol class="podio" style="list-style:none;padding:0">
+                <li class="tarjeta puesto" th:each="p, i : ${podio.entradas}">
+                    <div class="medalla" aria-hidden="true" th:text="${i.index == 0 ? '🥇' : (i.index == 1 ? '🥈' : '🥉')}"></div>
+                    <strong th:text="${p.nombre}"></strong>
+                    <div class="suave chico" th:text="${p.misionesCumplidas} + ' misiones cumplidas'"></div>
+                </li>
+            </ol>
+        </section>
+
+        <section class="seccion" aria-labelledby="titulo-como">
+            <h2 id="titulo-como">¿Cómo funciona?</h2>
+            <ol class="grilla" style="padding-left:1.2rem">
+                <li class="tarjeta"><strong>Acercá tu donación</strong> al depósito de Medrano 951. Si no tenés cuenta, te la creamos ahí.</li>
+                <li class="tarjeta"><strong>La asignamos</strong> a la entidad que mejor aprovecha esos bienes.</li>
+                <li class="tarjeta"><strong>Seguí el camión</strong> en el mapa el día de la entrega.</li>
+                <li class="tarjeta"><strong>Recibí el comprobante</strong> y las fotos cuando la entidad la recibe.</li>
+            </ol>
+        </section>
+    </div>
+</main>
+</body>
+</html>

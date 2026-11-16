@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Mapa de entregas', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <th:block th:replace="~{fragmentos/layout :: leaflet}"></th:block>
+    <div class="contenedor">
+        <h1>Donaciones entregadas</h1>
+        <p class="suave">Cada marcador es una entrega confirmada por una entidad beneficiaria. Hacé clic para ver el detalle.</p>
+        <div id="mapa" class="mapa skeleton" role="region" aria-label="Mapa de donaciones entregadas"></div>
+        <p class="leyenda"><span>💚 Entrega realizada</span><span th:text="${#lists.size(entregas)} + ' entregas en total'"></span></p>
+
+        <h2 class="mt-5">Listado</h2>
+        <p class="sr-only">Versión accesible del mapa en formato de tabla.</p>
+        <div class="tabla-envoltura">
+            <table class="apilable">
+                <thead><tr><th>Donación</th><th>Entidad</th><th>Fecha</th></tr></thead>
+                <tbody>
+                <tr th:each="e : ${entregas}">
+                    <td data-etiqueta="Donación" th:text="${e.descripcion}"></td>
+                    <td data-etiqueta="Entidad" th:text="${e.entidadNombre}"></td>
+                    <td data-etiqueta="Fecha" th:text="${@fmt.fecha(e.entregadaEn)}"></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(entregas)}"><td colspan="3" class="vacio">Sin entregas registradas.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            const entregas = /*[[${entregas}]]*/ [];
+            const el = document.getElementById('mapa');
+            el.classList.remove('skeleton');
+            const mapa = DonaTrack.mapa('mapa', null, 9);
+            const puntos = [];
+            entregas.forEach(e => {
+                const foto = e.fotos && e.fotos.length ? '<img src="/fotos/logistica/' + e.fotos[0].split('/').pop()
+                    + '" alt="" style="width:200px;margin-top:6px;border-radius:8px">' : '';
+                L.marker([e.latitud, e.longitud], { icon: DonaTrack.icono('💚', 'Entrega a ' + e.entidadNombre) })
+                    .bindPopup('<strong>' + DonaTrack.escapar(e.descripcion) + '</strong><br>Recibida por '
+                        + DonaTrack.escapar(e.entidadNombre) + '<br>' + new Date(e.entregadaEn).toLocaleDateString('es-AR') + foto)
+                    .addTo(mapa);
+                puntos.push([e.latitud, e.longitud]);
+            });
+            if (puntos.length) mapa.fitBounds(puntos, { padding: [40, 40], maxZoom: 12 });
+        });
+    </script>
+</main>
+</body>
+</html>

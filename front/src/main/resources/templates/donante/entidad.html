@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo=${entidad.razonSocial}, contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor">
+        <nav class="migas" aria-label="Ubicación"><a href="/donante/entidades">Entidades</a> › <span th:text="${entidad.razonSocial}"></span></nav>
+        <h1 th:text="${entidad.razonSocial}"></h1>
+        <p class="suave" th:text="${entidad.direccionFormateada} + ' · Tel. ' + ${entidad.telefono}"></p>
+        <h2>Necesidades actuales</h2>
+        <div class="grilla">
+            <article class="tarjeta" th:each="n : ${necesidades}">
+                <div class="fila-entre">
+                    <h3 class="mb-0" th:text="${n.subcategoria}"></h3>
+                    <span class="estado" th:classappend="${n.tipo == 'EXTRAORDINARIA' ? 'aviso' : 'info'}"
+                          th:text="${n.tipo == 'EXTRAORDINARIA' ? 'Extraordinaria' : 'Recurrente'}"></span>
+                </div>
+                <p class="mt-4" th:text="${n.descripcion}"></p>
+                <div class="progreso" role="progressbar" aria-valuemin="0" th:attr="aria-valuemax=${n.cantidadRequerida},aria-valuenow=${n.cantidadRecibida},aria-label='Avance de ' + ${n.subcategoria}">
+                    <span th:style="'width:' + ${n.cantidadRequerida == 0 ? 0 : (n.cantidadRecibida * 100 / n.cantidadRequerida)} + '%'"></span>
+                </div>
+                <p class="chico suave mt-4 mb-0">
+                    <span th:text="${n.cantidadRecibida} + ' de ' + ${n.cantidadRequerida} + ' ' + ${n.unidad} + ' recibidos'"></span>
+                    <span th:if="${n.periodicidad != null}" th:text="' (por ' + (${n.periodicidad == 'SEMANAL'} ? 'semana' : 'mes') + ')'"></span>
+                </p>
+            </article>
+        </div>
+        <p class="vacio tarjeta" th:if="${#lists.isEmpty(necesidades)}">Esta entidad no tiene necesidades publicadas.</p>
+    </div>
+</main>
+</body>
+</html>

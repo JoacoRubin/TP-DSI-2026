@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<select th:fragment="selector(id, nombre, categorias, seleccionada, requerido)" th:id="${id}" th:name="${nombre}"
+        th:required="${requerido}">
+    <option value="">Elegí una subcategoría</option>
+    <optgroup th:each="c : ${categorias}" th:label="${c.nombre}"
+              th:attr="data-perecedera=${c.perecedera},data-estado-uso=${c.requiereEstadoUso}">
+        <option th:each="s : ${c.subcategorias}" th:value="${s.id}" th:text="${s.nombre}"
+                th:selected="${seleccionada != null and seleccionada == s.id}"></option>
+    </optgroup>
+</select>
+</body>
+</html>

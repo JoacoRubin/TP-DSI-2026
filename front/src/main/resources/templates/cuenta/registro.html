@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Registrarme', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor">
+        <h1>¿Cómo querés participar?</h1>
+        <p class="suave">Elegí el tipo de cuenta. Si ya donaste en el depósito, revisá tu correo: te enviamos un enlace para activar tu cuenta.</p>
+        <div class="grilla">
+            <a class="tarjeta tarjeta-enlace" href="/registro/donante-humano">
+                <p style="font-size:2.5rem" aria-hidden="true">🙋</p>
+                <h2>Persona donante</h2>
+                <p class="suave mb-0">Doná a título personal, seguí tus donaciones y sumá insignias.</p>
+            </a>
+            <a class="tarjeta tarjeta-enlace" href="/registro/donante-juridico">
+                <p style="font-size:2.5rem" aria-hidden="true">🏢</p>
+                <h2>Organización donante</h2>
+                <p class="suave mb-0">Empresas, ONG, instituciones u organismos públicos.</p>
+            </a>
+            <a class="tarjeta tarjeta-enlace" href="/registro/entidad">
+                <p style="font-size:2.5rem" aria-hidden="true">🏫</p>
+                <h2>Entidad beneficiaria</h2>
+                <p class="suave mb-0">Escuelas, comedores, hogares: publicá necesidades y recibí donaciones.</p>
+            </a>
+        </div>
+    </div>
+</main>
+</body>
+</html>

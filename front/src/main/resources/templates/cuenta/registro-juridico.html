@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragmentos/layout :: pagina(titulo='Registro de organización donante', contenido=~{::main})}">
+<body>
+<main id="contenido" tabindex="-1">
+    <div class="contenedor" style="max-width:900px">
+        <nav class="migas" aria-label="Ubicación"><a href="/registro">Registro</a> › Organización donante</nav>
+        <h1>Registro de organización donante</h1>
+        <form th:action="@{/registro/donante-juridico}" method="post">
+            <th:block th:replace="~{fragmentos/campos :: personaJuridica(${form})}"></th:block>
+            <th:block th:replace="~{fragmentos/campos :: direccion(${form}, false)}"></th:block>
+            <th:block th:replace="~{fragmentos/campos :: contacto(${form})}"></th:block>
+            <th:block th:replace="~{fragmentos/campos :: clave}"></th:block>
+            <th:block th:replace="~{fragmentos/campos :: terminos}"></th:block>
+            <div class="acciones">
+                <a class="boton fantasma" href="/registro">Cancelar</a>
+                <button class="boton" type="submit"><span class="spinner" aria-hidden="true"></span>Crear cuenta</button>
+            </div>
+        </form>
+    </div>
+</main>
+</body>
+</html>
