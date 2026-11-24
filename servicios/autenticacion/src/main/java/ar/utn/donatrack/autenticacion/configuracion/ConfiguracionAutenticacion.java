@@ -87,7 +87,7 @@ public class ConfiguracionAutenticacion {
                 .csrf(c -> c.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers("/api/auth/**", "/.well-known/**", "/actuator/health/**",
+                        .requestMatchers("/api/auth/**", "/.well-known/**", "/actuator/health/**", "/actuator/prometheus",
                                 "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/usuarios/**").hasAnyRole("SERVICIO", "ADMIN")
                         .anyRequest().authenticated())
