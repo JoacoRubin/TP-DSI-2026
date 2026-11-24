@@ -3,13 +3,18 @@ package ar.utn.donatrack.logistica.compartido.infrastructure.persistencia;
 import ar.utn.donatrack.logistica.entregas.domain.Entrega;
 import ar.utn.donatrack.logistica.entregas.domain.EntregaRepositorio;
 import ar.utn.donatrack.logistica.entregas.domain.EstadoEntrega;
+import ar.utn.donatrack.logistica.entregas.domain.FiltroEntregas;
+import ar.utn.donatrack.logistica.entregas.domain.Pagina;
+import ar.utn.donatrack.logistica.entregas.domain.ResumenEntregas;
 import ar.utn.donatrack.logistica.flota.domain.Camion;
 import ar.utn.donatrack.logistica.flota.domain.CamionRepositorio;
 import ar.utn.donatrack.logistica.rutas.domain.EstadoRuta;
+import ar.utn.donatrack.logistica.rutas.domain.Posicion;
 import ar.utn.donatrack.logistica.rutas.domain.Ruta;
 import ar.utn.donatrack.logistica.rutas.domain.RutaRepositorio;
 import ar.utn.donatrack.logistica.rutas.domain.SolicitudPlanificacion;
 import ar.utn.donatrack.logistica.rutas.domain.SolicitudPlanificacionRepositorio;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -18,6 +23,8 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.regex.Pattern;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -116,6 +123,60 @@ class RepositorioEntregasMongo implements EntregaRepositorio {
         mongo.save(entrega, Colecciones.ENTREGAS);
     }
 
+    /** count + distinct en la base: no se traen documentos, sólo los totales. */
+    @Override
+    public ResumenEntregas resumenEntregadasDesde(Instant desde) {
+        Query q = Query.query(where("estado").is(EstadoEntrega.ENTREGADA).and("entregadaEn").gte(desde));
+        long entregadas = mongo.count(q, Entrega.class, Colecciones.ENTREGAS);
+        long entidades = mongo.findDistinct(q, "entidadId", Colecciones.ENTREGAS, Entrega.class, UUID.class).size();
+        return new ResumenEntregas(entregadas, entidades);
+    }
+
+    @Override
+    public List<Entrega> deDonaciones(Collection<UUID> donacionIds) {
+        if (donacionIds.isEmpty()) {
+            return List.of();
+        }
+        return mongo.find(Query.query(where("donacionId").in(donacionIds)).with(Sort.by(Sort.Direction.DESC, "creadaEn")),
+                Entrega.class, Colecciones.ENTREGAS);
+    }
+
+    @Override
+    public Pagina<Entrega> buscar(FiltroEntregas f, int numero, int tamanio) {
+        List<Criteria> condiciones = new ArrayList<>();
+        if (!f.estados().isEmpty()) condiciones.add(where("estado").in(f.estados()));
+        if (f.entidadId() != null) condiciones.add(where("entidadId").is(f.entidadId()));
+        if (f.donanteId() != null) condiciones.add(where("donanteId").is(f.donanteId()));
+        if (f.patente() != null) condiciones.add(where("patente").is(f.patente()));
+        if (f.desde() != null) condiciones.add(where("creadaEn").gte(f.desde()));
+        if (f.hasta() != null) condiciones.add(where("creadaEn").lt(f.hasta()));
+        if (f.texto() != null) {
+            // Pattern.quote: el texto del usuario se busca LITERAL (sin inyección de regex).
+            Pattern p = Pattern.compile(Pattern.quote(f.texto()), Pattern.CASE_INSENSITIVE);
+            condiciones.add(new Criteria().orOperator(where("detalle.descripcion").regex(p),
+                    where("destino.entidadNombre").regex(p)));
+        }
+        Query q = condiciones.isEmpty() ? new Query() : Query.query(new Criteria().andOperator(condiciones));
+        long total = mongo.count(q, Entrega.class, Colecciones.ENTREGAS);
+        q.with(Sort.by(Sort.Direction.DESC, "creadaEn")).skip((long) numero * tamanio).limit(tamanio);
+        return new Pagina<>(mongo.find(q, Entrega.class, Colecciones.ENTREGAS), total, numero, tamanio);
+    }
+
+    /** El índice único parcial {@code IndicesMongo#UNICA_ACTIVA_POR_DONACION} arbitra la carrera. */
+    @Override
+    public Entrega registrarSiNoHayActiva(Entrega nueva) {
+        try {
+            return mongo.insert(nueva, Colecciones.ENTREGAS);
+        } catch (DuplicateKeyException e) {
+            Entrega activa = mongo.findOne(Query.query(where("donacionId").is(nueva.donacionId())
+                    .and("estado").ne(EstadoEntrega.CANCELADA)), Entrega.class, Colecciones.ENTREGAS);
+            if (activa == null) {
+                throw e;
+            }
+            return activa;
+        }
+    }
+
     public void guardarTodas(Collection<Entrega> entregas) {
         entregas.forEach(this::guardar);
     }
@@ -142,10 +203,19 @@ class RepositorioRutasMongo implements RutaRepositorio {
      * $set de la última posición + $push con $slice: una sola operación atómica en el servidor.
      * No pisa cambios concurrentes de estado (ej. el chofer reporta mientras se finaliza la ruta).
      */
+    /**
+     * Update CONDICIONAL y atómico: sólo se aplica si la posición es más nueva que la guardada.
+     * El chequeo del dominio se hace sobre una lectura previa; con dos reportes simultáneos ambos
+     * lo pasan, y sin esta condición el que llega último (aunque sea más viejo) "hacía retroceder" al camión.
+     */
     public void guardarPosicion(Ruta ruta) {
-        Update update = new Update().set("ultimaPosicion", ruta.ultimaPosicion());
-        update.push("recorrido").slice(-Ruta.MAX_RECORRIDO).each(ruta.ultimaPosicion());
-        mongo.updateFirst(Query.query(where("_id").is(ruta.id())), update, Colecciones.RUTAS);
+        Posicion p = ruta.ultimaPosicion();
+        Update update = new Update().set("ultimaPosicion", p);
+        update.push("recorrido").slice(-Ruta.MAX_RECORRIDO).each(p);
+        Query masNueva = Query.query(where("_id").is(ruta.id()).orOperator(
+                where("ultimaPosicion").is(null),
+                where("ultimaPosicion.registradaEn").lt(p.registradaEn())));
+        mongo.updateFirst(masNueva, update, Colecciones.RUTAS);
     }
 
     public List<Ruta> enEstados(List<EstadoRuta> estados) {

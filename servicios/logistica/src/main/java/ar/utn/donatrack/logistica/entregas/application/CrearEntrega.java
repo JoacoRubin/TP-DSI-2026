@@ -28,13 +28,10 @@ public class CrearEntrega {
     public Entrega ejecutar(Comando c) {
         return entregas.buscarPorDonacion(c.donacionId())
                 .filter(e -> e.estado() != EstadoEntrega.CANCELADA)
-                .orElseGet(() -> {
-                    Entrega e = Entrega.nueva(UUID.randomUUID(), c.donacionId(), c.donanteId(), c.donanteNombre(),
-                            c.entidadId(), new Destino(c.entidadNombre(), c.direccion(), c.latitud(), c.longitud()),
-                            new DetalleDonacion(c.descripcion(), c.subcategoria(), c.cantidad(), c.unidad()),
-                            c.pesoKg(), c.volumenM3(), reloj.instant());
-                    entregas.guardar(e);
-                    return e;
-                });
+                .orElseGet(() -> entregas.registrarSiNoHayActiva(Entrega.nueva(UUID.randomUUID(), c.donacionId(),
+                        c.donanteId(), c.donanteNombre(), c.entidadId(),
+                        new Destino(c.entidadNombre(), c.direccion(), c.latitud(), c.longitud()),
+                        new DetalleDonacion(c.descripcion(), c.subcategoria(), c.cantidad(), c.unidad()),
+                        c.pesoKg(), c.volumenM3(), reloj.instant())));
     }
 }

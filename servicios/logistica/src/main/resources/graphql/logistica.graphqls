@@ -1,0 +1,72 @@
+# API GraphQL de Logística (Entrega 6). Pensada para el dashboard administrativo: el cliente
+# combina filtros a demanda y pide SÓLO los campos que muestra (sin over-fetching).
+# Endpoint: POST /graphql (rol ADMIN). Explorador: /graphiql en perfil local.
+
+type Query {
+  "Entregas que cumplen TODOS los filtros indicados, de la más nueva a la más vieja (máx. 100 por página)."
+  entregas(filtro: FiltroEntregas, pagina: Int = 0, tamanio: Int = 20): PaginaEntregas!
+}
+
+input FiltroEntregas {
+  estados: [EstadoEntrega!]
+  entidadId: ID
+  donanteId: ID
+  patente: String
+  "ISO-8601, inclusive. Ej: 2026-11-01T00:00:00Z"
+  desde: String
+  "ISO-8601, exclusivo"
+  hasta: String
+  "Busca en la descripción de la donación y en el nombre de la entidad (sin distinguir mayúsculas)"
+  texto: String
+}
+
+enum EstadoEntrega {
+  PENDIENTE
+  EN_PLANIFICACION
+  PLANIFICADA
+  EN_TRASLADO
+  ENTREGADA
+  NO_RECIBIDA
+  CANCELADA
+}
+
+type PaginaEntregas {
+  "Total real de coincidencias (no el tamaño de esta página)"
+  total: Int!
+  pagina: Int!
+  tamanio: Int!
+  elementos: [Entrega!]!
+}
+
+type Entrega {
+  id: ID!
+  donacionId: ID!
+  estado: EstadoEntrega!
+  estadoEtiqueta: String!
+  donanteId: ID
+  donanteNombre: String
+  entidadId: ID
+  entidadNombre: String
+  direccion: String
+  latitud: Float
+  longitud: Float
+  descripcion: String
+  subcategoria: String
+  cantidad: Int
+  unidad: String
+  pesoKg: Float
+  volumenM3: Float
+  patente: String
+  rutaId: ID
+  fotos: [String!]!
+  motivoNoRecepcion: String
+  creadaEn: String
+  entregadaEn: String
+  historial: [EventoEntrega!]!
+}
+
+type EventoEntrega {
+  estado: String!
+  fecha: String!
+  detalle: String
+}

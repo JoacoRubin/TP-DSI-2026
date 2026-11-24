@@ -43,8 +43,9 @@ public class ConfiguracionLogistica {
     @Bean
     PlanificadorRutas planificadorRutas(@Value("${donatrack.logistica.url-planificador}") String url,
                                         @Value("${donatrack.logistica.url-callback}") String callback,
-                                        @Value("${donatrack.logistica.token-callback}") String token) {
-        return new PlanificadorRutasRest(url, callback, token);
+                                        @Value("${donatrack.logistica.token-callback}") String token,
+                                        io.micrometer.observation.ObservationRegistry observaciones) {
+        return new PlanificadorRutasRest(url, callback, token, observaciones);
     }
 
     @Bean
@@ -152,11 +153,12 @@ public class ConfiguracionLogistica {
                 .csrf(c -> c.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers("/api/publico/**", "/api/planificaciones/callback", "/actuator/health/**",
+                        .requestMatchers("/api/publico/**", "/api/planificaciones/callback", "/actuator/health/**", "/actuator/prometheus",
                                 "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/fotos/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/entregas").hasAnyRole("SERVICIO", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/entregas/**").hasAnyRole("SERVICIO", "ADMIN")
+                        .requestMatchers("/graphql").hasRole("ADMIN")
                         .requestMatchers("/api/entregas/*/reprogramacion", "/api/planificaciones/**", "/api/planificaciones",
                                 "/api/camiones/**", "/api/camiones", "/api/monitoreo", "/api/rutas").hasRole("ADMIN")
                         .requestMatchers("/api/chofer/**", "/api/rutas/*/posiciones").hasAnyRole("CHOFER")

@@ -1,5 +1,6 @@
 package ar.utn.donatrack.logistica.compartido.infrastructure.integraciones;
 
+import io.micrometer.observation.ObservationRegistry;
 import ar.utn.donatrack.contratos.Colas;
 import ar.utn.donatrack.contratos.eventos.EventosLogistica;
 import ar.utn.donatrack.logistica.compartido.application.PublicadorEventos;
@@ -39,13 +40,14 @@ public class PlanificadorRutasRest implements PlanificadorRutas {
     private final String urlCallback;
     private final String tokenCallback;
 
-    public PlanificadorRutasRest(String urlPlanificador, String urlCallback, String tokenCallback) {
+    public PlanificadorRutasRest(String urlPlanificador, String urlCallback, String tokenCallback,
+                                 ObservationRegistry observaciones) {
         JdkClientHttpRequestFactory f = new JdkClientHttpRequestFactory(java.net.http.HttpClient.newBuilder()
                 .version(java.net.http.HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(3))
                 .build());
         f.setReadTimeout(Duration.ofSeconds(10));
-        this.cliente = RestClient.builder().baseUrl(urlPlanificador).requestFactory(f).build();
+        this.cliente = RestClient.builder().observationRegistry(observaciones).baseUrl(urlPlanificador).requestFactory(f).build();
         this.urlCallback = urlCallback;
         this.tokenCallback = tokenCallback;
     }

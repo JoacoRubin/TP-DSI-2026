@@ -16,6 +16,7 @@ import ar.utn.donatrack.logistica.entregas.application.InformarNoRecepcion;
 import ar.utn.donatrack.logistica.entregas.application.ReprogramarEntrega;
 import ar.utn.donatrack.logistica.entregas.domain.Entrega;
 import ar.utn.donatrack.logistica.entregas.domain.EstadoEntrega;
+import ar.utn.donatrack.logistica.entregas.domain.ResumenEntregas;
 import ar.utn.donatrack.logistica.flota.application.GestionarFlota;
 import ar.utn.donatrack.logistica.rutas.application.ConsultasLogistica;
 import ar.utn.donatrack.logistica.rutas.application.IniciarRuta;
@@ -118,8 +119,13 @@ class LogisticaController {
     @GetMapping("/api/entregas")
     List<EntregaVista> entregas(@RequestParam(required = false) EstadoEntrega estado,
                                 @RequestParam(required = false) UUID entidadId,
-                                @RequestParam(required = false) UUID donanteId, Authentication auth) {
+                                @RequestParam(required = false) UUID donanteId,
+                                @RequestParam(required = false) List<UUID> donacionIds, Authentication auth) {
         Actor a = Vistas.actor(auth);
+        if (donacionIds != null) {
+            // Acotado a una página de donaciones; la autorización filtra lo ajeno.
+            return consultas.entregasDeDonaciones(donacionIds, a).stream().map(EntregaVista::de).toList();
+        }
         if ("BENEFICIARIA".equals(a.rol())) {
             entidadId = UUID.fromString(a.referencia());
         } else if ("DONANTE".equals(a.rol())) {
@@ -203,9 +209,7 @@ class LogisticaController {
     RutaVista ruta(@PathVariable UUID id, Authentication auth) {
         Actor a = Vistas.actor(auth);
         Ruta r = consultas.ruta(id);
-        if ("CHOFER".equals(a.rol())) {
-            a.exigirChoferDe(r.patente());
-        }
+        a.exigirAccesoA(r);
         return RutaVista.filtrada(r, "CHOFER".equals(a.rol()) ? null : a);
     }
 
@@ -291,6 +295,12 @@ class LogisticaController {
                                                   @RequestParam(defaultValue = "200") int limite) {
         return consultas.entregadasRecientes(Math.min(dias, 3650), Math.min(limite, 500)).stream()
                 .map(EntregaPublicaVista::de).toList();
+    }
+
+    /** Métricas públicas reales (sin datos personales): cantidades, no listados. */
+    @GetMapping("/api/publico/resumen")
+    ResumenEntregas resumenPublico(@RequestParam(defaultValue = "30") int dias) {
+        return consultas.resumenPublico(Math.max(1, Math.min(dias, 3650)));
     }
 
     @GetMapping("/api/fotos/{nombre}")

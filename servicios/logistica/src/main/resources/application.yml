@@ -40,10 +40,6 @@ management:
   health:
     jms:
       enabled: false
-  endpoints:
-    web:
-      exposure:
-        include: health,info
 
 ---
 # Local: MongoDB embebido (se descarga la primera vez). Datos persistentes en ./data/logistica
@@ -51,6 +47,9 @@ spring:
   config:
     activate:
       on-profile: local
+  graphql:
+    graphiql:
+      enabled: true   # explorador en /graphiql (sólo local; enviar header Authorization: Bearer <token ADMIN>)
 de:
   flapdoodle:
     mongodb:

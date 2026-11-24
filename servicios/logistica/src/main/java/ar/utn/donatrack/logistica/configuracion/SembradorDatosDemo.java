@@ -1,5 +1,6 @@
 package ar.utn.donatrack.logistica.configuracion;
 
+import ar.utn.donatrack.contratos.demo.DatosDemo.DonacionDemo;
 import ar.utn.donatrack.logistica.compartido.infrastructure.AlmacenFotos;
 import ar.utn.donatrack.logistica.entregas.domain.DetalleDonacion;
 import ar.utn.donatrack.logistica.entregas.domain.Destino;
@@ -20,6 +21,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static ar.utn.donatrack.contratos.demo.DatosDemo.*;
@@ -50,22 +52,32 @@ class SembradorDatosDemo implements ApplicationRunner {
         camiones.guardar(Camion.registrar(CAMION_1, CAMION_1_PATENTE, 18, 3.2, 3500));
         camiones.guardar(Camion.registrar(CAMION_2, CAMION_2_PATENTE, 30, 3.8, 7000));
 
-        Instant ahora = reloj.instant();
-        entregas.guardar(historica(DONACION_HISTORICA_1, DONANTE_ANA, "Ana Pérez", ENTIDAD_HOGAR,
-                new Destino("Hogar de Niños Medrano", "Av. Díaz Vélez 4100, CABA", -34.6078, -58.4290),
-                new DetalleDonacion("20 unidades de Frazadas", "Frazadas", 20, "unidades"),
-                ahora.minus(Duration.ofDays(5)), fotos.guardarSvg("demo-frazadas.svg", "Frazadas recibidas", "#2563eb")));
-        entregas.guardar(historica(DONACION_HISTORICA_2, DONANTE_ARCOS, "Arcos Plateados S.A.", ENTIDAD_ESCUELA,
-                new Destino("Escuela Rural N°10", "Ruta 6 km 32, Cañuelas", -35.0516, -58.7609),
-                new DetalleDonacion("10 unidades de Bancos escolares", "Bancos escolares", 10, "unidades"),
-                ahora.minus(Duration.ofDays(12)), fotos.guardarSvg("demo-bancos.svg", "Bancos para el aula", "#059669")));
-        log.info("Datos demo de logística: 2 camiones y 2 entregas históricas");
+        // Una entrega por cada donación entregada de la historia compartida (mismos ids que Donaciones).
+        List<DonacionDemo> entregadas = HISTORIA.stream().filter(DonacionDemo::entregada).toList();
+        for (int i = 0; i < entregadas.size(); i++) {
+            DonacionDemo d = entregadas.get(i);
+            String foto = fotos.guardarSvg("demo-" + d.id() + ".svg", d.subcategoria(), COLORES[i % COLORES.length]);
+            entregas.guardar(historica(d, foto));
+        }
+        log.info("Datos demo de logística: 2 camiones y {} entregas históricas", entregadas.size());
     }
 
-    private Entrega historica(UUID donacionId, UUID donanteId, String donante, UUID entidadId, Destino destino,
-                              DetalleDonacion detalle, Instant entregada, String foto) {
-        return new Entrega(UUID.nameUUIDFromBytes(("entrega-" + donacionId).getBytes()), donacionId, donanteId, donante,
-                entidadId, destino, detalle, 20, 0.4, EstadoEntrega.ENTREGADA, null, CAMION_1, CAMION_1_PATENTE,
+    private static final String[] COLORES = {"#2563eb", "#059669", "#7c3aed", "#d97706", "#0f766e", "#db2777"};
+
+    private static final Map<UUID, Destino> DESTINOS = Map.of(
+            ENTIDAD_HOGAR, new Destino("Hogar de Niños Medrano", "Av. Díaz Vélez 4100, CABA", -34.6078, -58.4290),
+            ENTIDAD_ESCUELA, new Destino("Escuela Rural N°10", "Ruta 6 km 32, Cañuelas", -35.0516, -58.7609),
+            ENTIDAD_COMEDOR, new Destino("Comedor Escobar Sonrisas", "Tapia de Cruz 650, Belén de Escobar", -34.3489, -58.7956));
+
+    private static final Map<UUID, String> DONANTES = Map.of(
+            DONANTE_ANA, "Ana Pérez", DONANTE_ARCOS, "Arcos Plateados S.A.");
+
+    private Entrega historica(DonacionDemo d, String foto) {
+        Instant entregada = d.entregadaEn(reloj);
+        return new Entrega(UUID.nameUUIDFromBytes(("entrega-" + d.id()).getBytes()), d.id(), d.donanteId(),
+                DONANTES.get(d.donanteId()), d.entregadaA(), DESTINOS.get(d.entregadaA()),
+                new DetalleDonacion(d.titulo(), d.subcategoria(), d.cantidad(), d.unidad()),
+                20, 0.4, EstadoEntrega.ENTREGADA, null, CAMION_1, CAMION_1_PATENTE,
                 List.of(foto), null, entregada, entregada.minus(Duration.ofDays(2)),
                 List.of(new RegistroEstado(EstadoEntrega.ENTREGADA, entregada, "Recepción confirmada")));
     }

@@ -170,6 +170,17 @@ class CasosDeUsoLogisticaTest {
         public List<Entrega> entregadasDesde(Instant desde, int l) { return List.of(); }
         public void guardar(Entrega e) { datos.put(e.id(), e); }
         public void guardarTodas(Collection<Entrega> es) { es.forEach(this::guardar); }
+        public ar.utn.donatrack.logistica.entregas.domain.Pagina<Entrega> buscar(ar.utn.donatrack.logistica.entregas.domain.FiltroEntregas f, int n, int t) {
+            List<Entrega> todas = datos.values().stream().filter(e -> f.estados().isEmpty() || f.estados().contains(e.estado())).toList();
+            return new ar.utn.donatrack.logistica.entregas.domain.Pagina<>(todas.stream().skip((long) n * t).limit(t).toList(), todas.size(), n, t);
+        }
+        public List<Entrega> deDonaciones(Collection<UUID> ids) { return datos.values().stream().filter(e -> ids.contains(e.donacionId())).toList(); }
+        public ar.utn.donatrack.logistica.entregas.domain.ResumenEntregas resumenEntregadasDesde(Instant desde) { return new ar.utn.donatrack.logistica.entregas.domain.ResumenEntregas(0, 0); }
+        public synchronized Entrega registrarSiNoHayActiva(Entrega nueva) {
+            return datos.values().stream()
+                    .filter(e -> e.donacionId().equals(nueva.donacionId()) && e.estado() != EstadoEntrega.CANCELADA)
+                    .findFirst().orElseGet(() -> { guardar(nueva); return nueva; });
+        }
     }
 
     static class Camiones implements CamionRepositorio {
