@@ -13,15 +13,13 @@ import ar.utn.donatrack.donaciones.catalogo.domain.Categoria;
 import ar.utn.donatrack.donaciones.catalogo.domain.Subcategoria;
 import ar.utn.donatrack.donaciones.compartido.domain.Coordenadas;
 import ar.utn.donatrack.donaciones.compartido.domain.Direccion;
+import ar.utn.donatrack.contratos.demo.DatosDemo.DonacionDemo;
 import ar.utn.donatrack.donaciones.donaciones.domain.Bien;
-import ar.utn.donatrack.donaciones.donaciones.domain.BienDeclarado;
 import ar.utn.donatrack.donaciones.donaciones.domain.CambioEstado;
-import ar.utn.donatrack.donaciones.donaciones.domain.CargaDonacion;
 import ar.utn.donatrack.donaciones.donaciones.domain.Donacion;
 import ar.utn.donatrack.donaciones.donaciones.domain.DonacionRepositorio;
 import ar.utn.donatrack.donaciones.donaciones.domain.EstadoDonacion;
 import ar.utn.donatrack.donaciones.donaciones.domain.EstadoUso;
-import ar.utn.donatrack.donaciones.donaciones.domain.Segmentador;
 import ar.utn.donatrack.donaciones.donantes.domain.Documento;
 import ar.utn.donatrack.donaciones.donantes.domain.DonanteRepositorio;
 import ar.utn.donatrack.donaciones.donantes.domain.Genero;
@@ -135,37 +133,40 @@ class SembradorDatosDemo implements ApplicationRunner {
         necesidades.guardar(NecesidadExtraordinaria.nueva(UUID.randomUUID(), comedor.id(), sub("Sillas").id(), "Sillas",
                 "Sillas para el salón comedor", 12, "unidades", ahora));
 
-        // Donaciones en depósito, listas para el matchmaking
-        Segmentador segmentador = new Segmentador(c);
-        LocalDate hoy = LocalDate.now(reloj);
-        donaciones.guardarTodas(segmentador.segmentar(new CargaDonacion(DONANTE_ARCOS, "Mudanza de oficina corporativa", List.of(
-                new BienDeclarado("Silla de oficina", sub("Sillas").id(), 6, "unidades", null, EstadoUso.USADO, null, 30.0, 1.2),
-                new BienDeclarado("Mesa rectangular", sub("Mesas").id(), 1, "unidades", null, EstadoUso.USADO, null, 40.0, 1.5))),
-                ADMIN_EMAIL, hoy, ahora));
-        donaciones.guardarTodas(segmentador.segmentar(new CargaDonacion(DONANTE_ANA, "Donación de alimentos", List.of(
-                new BienDeclarado("Fideos secos tirabuzón", sub("Fideos secos").id(), 100, "paquetes", hoy.plusMonths(6), null, null, 50.0, 0.3),
-                new BienDeclarado("Puré de tomate tetra-pack", sub("Puré de tomate").id(), 50, "unidades", hoy.plusMonths(4), null, null, 25.0, 0.1))),
-                ADMIN_EMAIL, hoy, ahora));
-
-        // Historial: dos donaciones ya entregadas (alimentan landing, galería y mapa público)
-        donaciones.guardar(historica(DONACION_HISTORICA_1, DONANTE_ANA, sub("Frazadas"), "Frazadas", "Abrigo y descanso",
-                "Frazadas de abrigo", 20, ENTIDAD_HOGAR, ahora.minus(Duration.ofDays(5))));
-        donaciones.guardar(historica(DONACION_HISTORICA_2, DONANTE_ARCOS, sub("Bancos escolares"), "Bancos escolares",
-                "Mobiliario", "Bancos de madera", 10, ENTIDAD_ESCUELA, ahora.minus(Duration.ofDays(12))));
-        log.info("Datos demo sembrados: catálogo, 2 donantes, 3 entidades, necesidades y donaciones");
+        // Historia compartida con Incentivos y Logística (mismos ids): ver DatosDemo.HISTORIA.
+        HISTORIA.forEach(d -> donaciones.guardar(d.entregada() ? entregada(d, c) : enDeposito(d, c)));
+        log.info("Datos demo sembrados: catálogo, 2 donantes, 3 entidades, necesidades y {} donaciones", HISTORIA.size());
     }
 
-    private Donacion historica(UUID id, UUID donante, Subcategoria s, String subNombre, String categoria, String bien,
-                               int cantidad, UUID entidad, Instant entregada) {
-        Instant registrada = entregada.minus(Duration.ofDays(3));
+    private EstadoUso estadoUso(DonacionDemo d, Catalogo c) {
+        boolean exige = c.categorias().stream().filter(cat -> cat.nombre().equals(d.categoria()))
+                .anyMatch(Categoria::requiereEstadoUso);
+        return exige ? (d.usado() ? EstadoUso.USADO : EstadoUso.NUEVO) : null;
+    }
+
+    private LocalDate vencimiento(DonacionDemo d) {
+        return d.venceEnMeses() == null ? null : LocalDate.now(reloj).plusMonths(d.venceEnMeses());
+    }
+
+    private Donacion enDeposito(DonacionDemo d, Catalogo c) {
+        return Donacion.registrar(d.id(), d.cargaId(), d.donanteId(), "Donación de " + d.categoria().toLowerCase(),
+                sub(d.subcategoria()).id(), d.subcategoria(), d.categoria(), d.unidad(), vencimiento(d), estadoUso(d, c),
+                List.of(new Bien(d.bien(), d.cantidad(), null)), d.cantidad() * 0.5, d.cantidad() * 0.01,
+                ADMIN_EMAIL, d.registradaEn(reloj));
+    }
+
+    private Donacion entregada(DonacionDemo d, Catalogo c) {
+        Instant registrada = d.registradaEn(reloj);
+        Instant entregada = d.entregadaEn(reloj);
         List<CambioEstado> historial = List.of(
                 new CambioEstado(null, EstadoDonacion.EN_DEPOSITO, registrada, ADMIN_EMAIL, "Ingreso al depósito"),
                 new CambioEstado(EstadoDonacion.EN_DEPOSITO, EstadoDonacion.ASIGNADA, registrada.plus(Duration.ofDays(1)), ADMIN_EMAIL, null),
                 new CambioEstado(EstadoDonacion.ASIGNADA, EstadoDonacion.LISTA_PARA_ENTREGAR, registrada.plus(Duration.ofDays(2)), "logistica", null),
                 new CambioEstado(EstadoDonacion.LISTA_PARA_ENTREGAR, EstadoDonacion.EN_TRASLADO, entregada.minus(Duration.ofHours(3)), "logistica", null),
                 new CambioEstado(EstadoDonacion.EN_TRASLADO, EstadoDonacion.ENTREGADA, entregada, "entidad", "Recepción confirmada"));
-        return new Donacion(id, UUID.randomUUID(), donante, "Donación histórica", s.id(), subNombre, categoria, "unidades",
-                null, EstadoUso.NUEVO, List.of(new Bien(bien, cantidad, null)), cantidad * 1.0, cantidad * 0.02,
-                EstadoDonacion.ENTREGADA, null, entidad, CAMION_1_PATENTE, entregada, registrada, historial);
+        return new Donacion(d.id(), d.cargaId(), d.donanteId(), "Donación de " + d.categoria().toLowerCase(),
+                sub(d.subcategoria()).id(), d.subcategoria(), d.categoria(), d.unidad(), vencimiento(d), estadoUso(d, c),
+                List.of(new Bien(d.bien(), d.cantidad(), null)), d.cantidad() * 0.5, d.cantidad() * 0.01,
+                EstadoDonacion.ENTREGADA, null, d.entregadaA(), CAMION_1_PATENTE, entregada, registrada, historial);
     }
 }

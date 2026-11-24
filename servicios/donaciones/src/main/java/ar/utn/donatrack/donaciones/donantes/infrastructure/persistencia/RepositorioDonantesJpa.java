@@ -75,7 +75,9 @@ class RepositorioDonantesJpa implements DonanteRepositorio {
 
     @Override
     public void guardar(Donante donante) {
-        jpa.save(DonanteJpa.desde(donante));
+        // Flush inmediato: las altas crean después la cuenta remota (no idempotente); un error
+        // local debe aparecer ACÁ y no en el commit, cuando la cuenta ya existe.
+        jpa.saveAndFlush(DonanteJpa.desde(donante));
     }
 
     @Override

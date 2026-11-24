@@ -11,4 +11,6 @@ public interface ImportacionRepositorio {
     Optional<Importacion> buscar(UUID id);
 
     List<Importacion> recientes(int limite);
+
+    List<Importacion> enCurso();
 }

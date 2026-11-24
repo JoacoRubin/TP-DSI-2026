@@ -146,7 +146,17 @@ public class Donacion {
     }
 
     public String descripcionCorta() {
-        return cantidadTotal() + " " + (unidad == null ? "" : unidad + " de ") + subcategoriaNombre;
+        int cantidad = cantidadTotal();
+        String u = unidad == null ? null : (cantidad == 1 ? singular(unidad) : unidad);
+        return cantidad + " " + (u == null ? "" : u + " de ") + subcategoriaNombre;
+    }
+
+    /** "unidades" → "unidad", "pares" → "par", "paquetes" → "paquete"; abreviaturas ("kg") sin cambios. */
+    static String singular(String plural) {
+        if (plural.matches(".*[dnrl]es")) {
+            return plural.substring(0, plural.length() - 2);
+        }
+        return plural.endsWith("s") ? plural.substring(0, plural.length() - 1) : plural;
     }
 
     public UUID id() { return id; }

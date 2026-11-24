@@ -29,6 +29,11 @@ import ar.utn.donatrack.donaciones.compartido.application.ServicioLogistica;
 import ar.utn.donatrack.donaciones.compartido.application.Transaccion;
 import ar.utn.donatrack.donaciones.compartido.infrastructure.integraciones.ServicioCuentasRest;
 import ar.utn.donatrack.donaciones.compartido.infrastructure.integraciones.ServicioLogisticaRest;
+import ar.utn.donatrack.donaciones.compartido.infrastructure.outbox.BandejaSalida;
+import ar.utn.donatrack.donaciones.compartido.infrastructure.outbox.DespachadorOutbox;
+import ar.utn.donatrack.donaciones.compartido.infrastructure.outbox.ServicioLogisticaConOutbox;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.observation.ObservationRegistry;
 import ar.utn.donatrack.donaciones.donaciones.application.ActualizarDonacion;
 import ar.utn.donatrack.donaciones.donaciones.application.ConsultasDonaciones;
 import ar.utn.donatrack.donaciones.donaciones.application.DevolverADeposito;
@@ -49,8 +54,10 @@ import ar.utn.donatrack.donaciones.donantes.application.RegistrarPersonaHumana;
 import ar.utn.donatrack.donaciones.donantes.application.RegistrarPersonaJuridica;
 import ar.utn.donatrack.donaciones.donantes.domain.DonanteRepositorio;
 import ar.utn.donatrack.donaciones.importacion.application.ConsultasImportacion;
+import ar.utn.donatrack.donaciones.importacion.application.FallarImportacion;
 import ar.utn.donatrack.donaciones.importacion.application.IniciarImportacion;
 import ar.utn.donatrack.donaciones.importacion.application.ProcesarImportacion;
+import ar.utn.donatrack.donaciones.importacion.application.RecuperarImportacionesInterrumpidas;
 import ar.utn.donatrack.donaciones.importacion.domain.ImportacionRepositorio;
 import ar.utn.donatrack.soporte.seguridad.TokenServicioProvider;
 import org.springframework.context.annotation.Bean;
@@ -74,23 +81,34 @@ public class ConfiguracionCasosDeUso {
 
     // ------------------------------------------------------------- adaptadores de salida
 
-    private static RestClient cliente(String url, TokenServicioProvider tokens) {
+    private static RestClient cliente(String url, TokenServicioProvider tokens, ObservationRegistry observaciones) {
         JdkClientHttpRequestFactory f = new JdkClientHttpRequestFactory(java.net.http.HttpClient.newBuilder()
                 .version(java.net.http.HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(3))
                 .build());
         f.setReadTimeout(Duration.ofSeconds(30));
-        return RestClient.builder().baseUrl(url).requestFactory(f).requestInterceptor(tokens.interceptor()).build();
+        return RestClient.builder().observationRegistry(observaciones).baseUrl(url).requestFactory(f).requestInterceptor(tokens.interceptor()).build();
     }
 
     @Bean
-    ServicioCuentas servicioCuentas(PropiedadesDonaciones p, TokenServicioProvider tokens) {
-        return new ServicioCuentasRest(cliente(p.urlAutenticacion(), tokens));
+    ServicioCuentas servicioCuentas(PropiedadesDonaciones p, TokenServicioProvider tokens, ObservationRegistry observaciones) {
+        return new ServicioCuentasRest(cliente(p.urlAutenticacion(), tokens, observaciones));
+    }
+
+    /**
+     * Los casos de uso hablan con Logística a través del outbox: el comando se guarda en la misma
+     * transacción que los cambios locales. El adaptador REST NO es un bean: sólo lo usa el despachador.
+     */
+    @Bean
+    ServicioLogistica servicioLogistica(BandejaSalida bandeja, ObjectMapper json, Clock reloj) {
+        return new ServicioLogisticaConOutbox(bandeja, json, reloj);
     }
 
     @Bean
-    ServicioLogistica servicioLogistica(PropiedadesDonaciones p, TokenServicioProvider tokens) {
-        return new ServicioLogisticaRest(cliente(p.urlLogistica(), tokens));
+    DespachadorOutbox despachadorOutbox(BandejaSalida bandeja, ObjectMapper json, Clock reloj,
+                                        PropiedadesDonaciones p, TokenServicioProvider tokens,
+                                        ObservationRegistry observaciones) {
+        return new DespachadorOutbox(bandeja, new ServicioLogisticaRest(cliente(p.urlLogistica(), tokens, observaciones)), json, reloj);
     }
 
     @Bean
@@ -295,6 +313,16 @@ public class ConfiguracionCasosDeUso {
     @Bean
     IniciarImportacion iniciarImportacion(ImportacionRepositorio i, Clock reloj) {
         return new IniciarImportacion(i, reloj);
+    }
+
+    @Bean
+    FallarImportacion fallarImportacion(ImportacionRepositorio i, Clock reloj) {
+        return new FallarImportacion(i, reloj);
+    }
+
+    @Bean
+    RecuperarImportacionesInterrumpidas recuperarImportacionesInterrumpidas(ImportacionRepositorio i, Clock reloj) {
+        return new RecuperarImportacionesInterrumpidas(i, reloj);
     }
 
     @Bean

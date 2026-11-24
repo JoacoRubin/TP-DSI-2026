@@ -110,6 +110,7 @@ public final class EnMemoria {
         public void guardar(Importacion i) { datos.put(i.id(), i); }
         public Optional<Importacion> buscar(UUID id) { return Optional.ofNullable(datos.get(id)); }
         public List<Importacion> recientes(int l) { return List.copyOf(datos.values()); }
+        public List<Importacion> enCurso() { return datos.values().stream().filter(i -> i.estado() == Importacion.Estado.EN_CURSO).toList(); }
     }
 
     public record Enviada(Destinatario destinatario, String asunto, String mensaje, String tipo) {

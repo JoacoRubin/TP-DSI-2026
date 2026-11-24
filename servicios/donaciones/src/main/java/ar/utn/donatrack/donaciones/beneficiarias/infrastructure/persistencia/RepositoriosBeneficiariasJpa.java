@@ -67,7 +67,8 @@ class RepositorioEntidadesJpa implements EntidadRepositorio {
 
     @Override
     public void guardar(EntidadBeneficiaria entidad) {
-        jpa.save(EntidadJpa.desde(entidad));
+        // Flush inmediato: ver RepositorioDonantesJpa#guardar (alta antes de la cuenta remota).
+        jpa.saveAndFlush(EntidadJpa.desde(entidad));
     }
 
     @Override

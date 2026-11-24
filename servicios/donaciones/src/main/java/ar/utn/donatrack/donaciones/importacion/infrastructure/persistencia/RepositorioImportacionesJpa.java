@@ -89,6 +89,8 @@ class ImportacionJpa {
 
 interface ImportacionJpaRepository extends JpaRepository<ImportacionJpa, UUID> {
     List<ImportacionJpa> findAllByOrderByIniciadaEnDesc(Pageable pagina);
+
+    List<ImportacionJpa> findByEstado(Importacion.Estado estado);
 }
 
 /** El progreso se guarda en su propia transacción para que sea visible mientras el proceso corre. */
@@ -117,5 +119,11 @@ class RepositorioImportacionesJpa implements ImportacionRepositorio {
     @Transactional(readOnly = true)
     public List<Importacion> recientes(int limite) {
         return jpa.findAllByOrderByIniciadaEnDesc(PageRequest.of(0, limite)).stream().map(ImportacionJpa::aDominio).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Importacion> enCurso() {
+        return jpa.findByEstado(Importacion.Estado.EN_CURSO).stream().map(ImportacionJpa::aDominio).toList();
     }
 }

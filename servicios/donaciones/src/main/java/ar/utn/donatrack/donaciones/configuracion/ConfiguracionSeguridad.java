@@ -21,7 +21,7 @@ public class ConfiguracionSeguridad {
                 .csrf(c -> c.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers("/api/saludo", "/api/categorias", "/api/registro/**", "/actuator/health/**",
+                        .requestMatchers("/api/saludo", "/api/categorias", "/api/registro/**", "/actuator/health/**", "/actuator/prometheus",
                                 "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/fotos/**").permitAll()
                         .requestMatchers("/api/importaciones/**", "/api/matchmaking/**").hasRole("ADMIN")

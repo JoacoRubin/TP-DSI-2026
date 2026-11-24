@@ -11,5 +11,7 @@ spring:
       auto-startup: false
 
 donatrack:
+  outbox:
+    despacho-habilitado: false
   fotos:
     directorio: ./target/fotos-test

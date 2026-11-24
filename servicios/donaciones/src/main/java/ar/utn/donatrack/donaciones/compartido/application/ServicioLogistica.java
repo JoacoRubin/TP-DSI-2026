@@ -2,7 +2,10 @@ package ar.utn.donatrack.donaciones.compartido.application;
 
 import java.util.UUID;
 
-/** Puerto de salida hacia Logística (comandos sincrónicos que requieren confirmación). */
+/**
+ * Puerto de salida hacia Logística. Los comandos son ASINCRÓNICOS y confiables: se registran en
+ * la transacción del caso de uso (outbox) y se entregan después, en orden por donación.
+ */
 public interface ServicioLogistica {
 
     /**
