@@ -47,11 +47,12 @@ class PlanificacionesController {
 class ProcesadorAsincronico {
 
     private static final Logger log = LoggerFactory.getLogger(ProcesadorAsincronico.class);
-    private final RestClient cliente = RestClient.create();
+    private final RestClient cliente;
     private final long demoraMs;
 
-    ProcesadorAsincronico(@Value("${planificador.demora-ms:2000}") long demoraMs) {
+    ProcesadorAsincronico(@Value("${planificador.demora-ms:2000}") long demoraMs, RestClient.Builder clientes) {
         this.demoraMs = demoraMs;
+        this.cliente = clientes.build(); // builder de Spring: ya instrumentado para trazas
     }
 
     record Callback(UUID solicitudId, List<Algoritmo.Ruta> rutas, List<UUID> sinAsignar) {
