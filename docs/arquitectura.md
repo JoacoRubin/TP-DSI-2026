@@ -127,6 +127,7 @@ Nadie hace JOIN contra la base de otro. Las copias desnormalizadas se justifican
 * **Contratos** en el módulo `plataforma/contratos` (Java puro). El tipo viaja como identificador lógico (`_tipo=ruta.iniciada`), no como nombre de clase.
 * **Entrega "al menos una vez"** + **consumidores idempotentes** (cada caso de uso verifica el estado antes de transicionar; Notificaciones usa el id del mensaje).
 * **Publicación post-commit**: si la transacción se revierte, el mensaje no sale (versión liviana del patrón *Transactional Outbox*).
+* **Transactional Outbox hacia Logística**: `solicitarEntrega` / `cancelarEntrega` no llaman por HTTP dentro de la transacción; se guardan en `outbox_mensajes` **en la misma transacción** que los cambios de la donación (`ServicioLogisticaConOutbox`). `DespachadorOutbox` los entrega cada 3 s, en orden por donación, con hasta 20 reintentos ante caídas; un rechazo 4xx queda `FALLIDO` y se loguea. Garantía "al menos una vez": Logística es idempotente por donación (índice único parcial `ux_entrega_activa_por_donacion`: una sola entrega no cancelada por donación).
 * **Reintentos y DLQ**: 5 intentos con backoff exponencial y luego *Dead Letter Queue*.
 * **Tolerancia a eventos perdidos**: `RutaIniciada` puede "ponerse al día" si no llegó `EntregaPlanificada`.
 
@@ -160,12 +161,12 @@ sequenceDiagram
 
 | Tema | Estado actual (local) | Próximo paso |
 |---|---|---|
-| Despliegue | JARs + scripts | Imagen Docker por servicio + `docker compose`; luego Render/Railway/Fly.io o un clúster |
+| Despliegue | **Local** (decisión del equipo): JARs + `scripts/iniciar.*` + vigilante | Imagen Docker por servicio + `docker compose` en una VM, o PaaS (Render/Railway/Fly.io). **Pendiente**: el req. 1 de la E6 pide acceso público |
 | Base relacional | H2 en archivo, modo PostgreSQL | Perfil `postgres` ya configurado (`SPRING_PROFILES_ACTIVE=postgres`); migraciones con Flyway |
 | MongoDB | Embebido (flapdoodle) | Perfil `mongo` con `MONGO_URI` (Atlas) |
 | Broker | Artemis embebido en proceso propio | Artemis/RabbitMQ gestionado (sólo cambia `spring.artemis.broker-url`) |
-| Observabilidad | Actuator `/health`, logs estructurados por servicio | Micrometer + Prometheus/Grafana, trazas con OpenTelemetry (propagación W3C ya soportada por Spring) |
-| Rate limiting | — | Filtro Bucket4j en el gateway / en `/login` y `/api/rutas/*/posiciones` |
-| gRPC / GraphQL | REST | GraphQL en Logística para filtros dinámicos del dashboard (`spring-boot-starter-graphql`) |
+| Observabilidad | **Implementado**: métricas Prometheus, trazas OTel→Tempo (W3C entre servicios), logs JSON ECS→Loki, Grafana con alertas (`docs/observabilidad.md`) | Alertmanager con notificación (mail/Slack) |
+| Rate limiting | **Implementado** en el BFF (front): Bucket4j por IP, 3 políticas, 429 + `Retry-After` | Bucket distribuido (Redis) o en el API Gateway si hay varias instancias |
+| gRPC / GraphQL | **Implementado**: GraphQL en Logística (`/graphql`, rol ADMIN): filtros combinables + selección de campos + paginación | Consumirlo desde el dashboard de monitoreo del front |
 | Microservicios (bonus) | Servicios independientes ya desplegables por separado | Spring Cloud Gateway + Eureka/Consul; el front pasaría a hablar sólo con el gateway |
-| Outbox (bonus) | Publicación post-commit | Tabla `outbox` en la misma transacción + *relay* que publica y marca enviado |
+| Outbox (bonus) | **Implementado** para comandos Donaciones → Logística (`outbox_mensajes` + `DespachadorOutbox`) | Extenderlo a los eventos JMS (hoy post-commit) y despachar con `SELECT ... FOR UPDATE SKIP LOCKED` para varias instancias |

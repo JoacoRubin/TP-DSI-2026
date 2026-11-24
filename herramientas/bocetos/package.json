@@ -1,0 +1,12 @@
+{
+  "name": "donatrack-bocetos",
+  "private": true,
+  "description": "Genera los bocetos anotados (capturas reales + marcadores por requerimiento) en docs/bocetos",
+  "type": "module",
+  "scripts": {
+    "capturar": "node capturar.mjs"
+  },
+  "dependencies": {
+    "puppeteer-core": "23.11.1"
+  }
+}

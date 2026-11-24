@@ -18,6 +18,8 @@
 | **Asynchronous Request-Reply** | Importación CSV (202 + `GET /api/importaciones/{id}`), planificador (202 + callback), matchmaking a demanda | Operaciones largas sin bloquear requests HTTP. |
 | **Idempotent Consumer** | Receptores JMS + casos de uso que verifican estado | El broker garantiza "al menos una vez": procesar dos veces no debe duplicar efectos. |
 | **Post-commit publishing** | `PublicadorPostCommit` | No avisar algo que luego se revirtió (versión liviana de *Transactional Outbox*). |
+| **Transactional Outbox** | `ServicioLogisticaConOutbox` + `DespachadorOutbox` (Donaciones) | Llamar a Logística antes del commit podía dejar una entrega huérfana si después había rollback. Ahora el comando se confirma o se descarta JUNTO con la donación. Elegido sobre "evento post-commit" porque éste se pierde si Logística está caída. |
+| **Idempotent Receiver (por restricción)** | Índice único parcial en `entregas.donacionId` + `registrarSiNoHayActiva` | "Buscar y después insertar" no es atómico: con 8 avisos concurrentes se creaban 8 entregas (test `CrearEntregaIdempotenteMongoTest`). La base arbitra la carrera. |
 | **Shared Kernel** | `plataforma/contratos` | Lenguaje común de integración (eventos, mensajes, errores base), Java puro y versionado. |
 
 ## 2. Decisiones de modelado relevantes
@@ -51,9 +53,10 @@
 * **Dominio** (sin Spring, sin base): segmentación con los ejemplos del enunciado (Arcos Plateados, planta de pastas), máquina de estados, necesidades parciales/recurrentes, Levenshtein y ambos algoritmos con los valores de la fórmula, motor de misiones, racha, ranking, patentes, posiciones GPS.
 * **Casos de uso** con *fakes* en memoria: confirmar asignación (incluye "si Logística cae, no se notifica"), importación de 20.000 filas verificando que la cantidad de consultas sea **una por lote** (anti N+1), lotes de 100 al planificador, callback idempotente, permisos de chofer y entidad.
 * **Integración**: `DonacionesApiIntegracionTest` levanta Spring + JPA (H2 en memoria) + seguridad real y prueba el flujo HTTP (401/403/422/400 incluidos).
+* **Front (BFF)**: `AutorizacionPorRolTest` cruza cada rol con cada sección (403 si no corresponde, login si no hay sesión, CSRF obligatorio); `FormularioRegistroTest` valida el formulario y el cuerpo que viaja a Donaciones. Se verificó que el test falla si se afloja una regla de seguridad.
 * **E2E manual automatizado** contra el sistema corriendo: login por rol, matchmaking, asignación, planificación con callback, inicio de ruta, GPS, seguimiento con filtro de privacidad, recepción con foto, comprobante, incentivos, importación de 20.000 filas, activación de cuenta.
 
-Total: **110 tests automatizados** (`./mvnw test`).
+Total: **244 tests automatizados en Java** (`./mvnw test`) y 4 de JavaScript (`node --test front/src/test/js`). Qué requisito respalda cada uno: [matriz de requisitos](matriz-requisitos.md).
 
 ## 5. Respuestas a las preguntas de discusión
 
@@ -78,7 +81,12 @@ Depende del **consumidor**. gRPC brilla en comunicación servicio↔servicio de 
 ## 6. Limitaciones conocidas (honestidad técnica)
 
 * **ddl-auto=update** en local: en producción corresponde Flyway/Liquibase con migraciones versionadas.
-* La publicación post-commit puede perder un mensaje si el proceso cae entre el commit y el envío → *Transactional Outbox* (bonus E6).
+* La publicación post-commit de **eventos JMS** puede perder un mensaje si el proceso cae entre el commit y el envío. Los comandos a Logística ya usan *Transactional Outbox*; falta extenderlo a los eventos.
+* El outbox asume **una sola instancia** de Donaciones despachando. Carrera aceptada: si el camión arranca y Donaciones aún no recibió `RutaIniciada`, una cancelación puede ser rechazada por Logística; queda `FALLIDO` en `outbox_mensajes` y se loguea como ERROR para revisión manual.
+* El índice único parcial requiere **MongoDB ≥ 6.0** (el embebido usa 7.0.14).
+* **Altas con cuenta remota** (`RegistrarPersonaHumana`, `RegistrarPersonaJuridica`, `RegistrarEntidad`): no usan outbox porque necesitan respuesta sincrónica (política de clave y token de activación). Mitigación: `guardar` hace *flush* inmediato, así cualquier error local (p. ej. email duplicado) ocurre ANTES de crear la cuenta en Autenticación (test `AltaAntesDeCuentaRemotaJpaTest`). Riesgo residual aceptado: que falle el commit mismo después de crear la cuenta (caída de la base en ese instante) deja una cuenta huérfana; se resolvería con alta idempotente en Autenticación o compensación.
 * El planificador de rutas es una **simulación** (asignación first-fit + vecino más cercano), no un optimizador real.
 * Los mapas usan *tiles* públicos de OpenStreetMap: requieren conexión a internet y, en producción, un proveedor con SLA.
-* No hay rate limiting ni observabilidad avanzada todavía (alcance de la Entrega 6).
+* **Despliegue local, no en la nube**: decisión del equipo. El req. 1 de la Entrega 6 pide acceso público; queda documentado como pendiente.
+* El rate limiting vive en memoria del front (una instancia). Con varias, el cupo debe compartirse (Redis / gateway).
+* El reinicio automático lo hace `scripts/vigilante.*` (procesos locales). En contenedores lo haría el orquestador (`restart:` + healthcheck, o probes de Kubernetes).

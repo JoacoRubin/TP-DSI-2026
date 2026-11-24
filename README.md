@@ -12,8 +12,9 @@ misiones, insignias y ranking.
 | [`docs/arquitectura.md`](docs/arquitectura.md) | Análisis de estilos (monolito, monolito modular, servicios, microservicios) y decisión; componentes, mensajería, seguridad, evolución |
 | [`docs/modelo-dominio.md`](docs/modelo-dominio.md) | Diagramas de clases por servicio, estados, secuencia, DER físico por servicio y modelo documental |
 | [`docs/justificaciones.md`](docs/justificaciones.md) | Patrones, decisiones de modelado, UI/UX/WCAG, pruebas y **respuestas a las 6 preguntas de discusión** |
+| [`docs/matriz-requisitos.md`](docs/matriz-requisitos.md) | **Cada requerimiento de las 6 entregas → implementación, prueba que lo respalda y captura**, con lo pendiente marcado |
 | [`docs/diagramas/`](docs/diagramas) | Casos de uso y despliegue (PlantUML) |
-| [`docs/n8n/difusion-insignias.json`](docs/n8n/difusion-insignias.json) | Flujo low-code de difusión de insignias (importable en n8n) |
+| [`docs/n8n/difusion-insignias.json`](docs/n8n/difusion-insignias.json) | Flujo low-code de difusión de insignias: genera la tarjeta y la publica localmente (ver [`docs/n8n/README.md`](docs/n8n/README.md)) |
 
 ---
 
@@ -36,6 +37,10 @@ Wrapper, H2 en archivo, MongoDB embebido y un broker Artemis propio.
 
 Abrí **<http://localhost:8080>**. La primera ejecución descarga dependencias y el binario de MongoDB (~1–3 min).
 Los datos persisten en `./data/` y los logs quedan en `./logs/`. Para empezar de cero: detener y borrar `./data/`.
+
+`iniciar` también lanza el **vigilante** (reinicio automático de componentes caídos) y termina con error si algún
+componente no responde. **Observabilidad opcional** (requiere Docker): métricas, trazas, logs y alertas en Grafana,
+ver [`docs/observabilidad.md`](docs/observabilidad.md).
 
 ### Cuentas de demostración (contraseña `Demo1234!`)
 
@@ -115,6 +120,8 @@ Cada servicio sigue **Arquitectura Hexagonal** con estructura que "grita" el neg
 | `SECRETO_DONACIONES`, `SECRETO_LOGISTICA`, `SECRETO_INCENTIVOS`, `TOKEN_CALLBACK` | Secretos de servicio (cambiar fuera de desarrollo) |
 
 ## Trazabilidad de requerimientos de UI/UX
+
+Bocetos anotados de cada pantalla (capturas reales con marcadores por requerimiento): [`docs/bocetos/`](docs/bocetos/README.md).
 
 | # | Requerimiento | Dónde |
 |---|---|---|

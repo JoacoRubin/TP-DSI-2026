@@ -1,5 +1,6 @@
 {
   "name": "DonaTrack - Difusión de insignias",
+  "active": false,
   "nodes": [
     {
       "parameters": {
@@ -17,14 +18,15 @@
     },
     {
       "parameters": {
-        "keepOnlySet": true,
-        "values": {
-          "string": [
-            { "name": "texto", "value": "={{ $json.body.texto }}" },
-            { "name": "insignia", "value": "={{ $json.body.icono }} {{ $json.body.insignia }}" },
-            { "name": "nombre", "value": "={{ $json.body.nombre }}" },
-            { "name": "categoria", "value": "={{ $json.body.categoria }}" },
-            { "name": "imagenUrl", "value": "=https://placehold.co/1080x1080/0f766e/ffffff/png?text={{ encodeURIComponent($json.body.insignia + '\\n' + $json.body.nombre) }}" }
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "donanteId", "type": "string", "value": "={{ $json.body.donanteId }}" },
+            { "id": "a2", "name": "insignia", "type": "string", "value": "={{ $json.body.insignia }}" },
+            { "id": "a3", "name": "nombre", "type": "string", "value": "={{ $json.body.nombre }}" },
+            { "id": "a4", "name": "categoria", "type": "string", "value": "={{ $json.body.categoria }}" },
+            { "id": "a5", "name": "mencion", "type": "string", "value": "={{ '@' + $json.body.nombre.replace(/\\s+/g, '') }}" },
+            { "id": "a6", "name": "publicacion", "type": "string", "value": "={{ $json.body.icono }} {{ $json.body.texto }} ¡Felicitaciones {{ '@' + $json.body.nombre.replace(/\\s+/g, '') }}! #DonaTrack #UTNSolidaria" },
+            { "id": "a7", "name": "archivo", "type": "string", "value": "={{ $json.body.donanteId }}-{{ $now.toFormat('yyyyLLdd-HHmmss') }}" }
           ]
         },
         "options": {}
@@ -32,58 +34,97 @@
       "id": "1b0f5a1e-0002-4c1a-9c11-000000000002",
       "name": "Armar publicación",
       "type": "n8n-nodes-base.set",
-      "typeVersion": 2,
-      "position": [480, 300]
+      "typeVersion": 3.4,
+      "position": [460, 300]
     },
     {
       "parameters": {
-        "url": "={{ $json.imagenUrl }}",
-        "options": { "response": { "response": { "responseFormat": "file" } } }
+        "operation": "multiStep",
+        "operations": {
+          "operations": [
+            { "operation": "create", "backgroundColor": "#0f766e", "width": 1080, "height": 1080 },
+            { "operation": "draw", "primitive": "rectangle", "color": "#ffffff", "startPositionX": 60, "startPositionY": 60, "endPositionX": 1020, "endPositionY": 1020, "cornerRadius": 40 },
+            { "operation": "draw", "primitive": "rectangle", "color": "#f59e0b", "startPositionX": 60, "startPositionY": 60, "endPositionX": 1020, "endPositionY": 200, "cornerRadius": 40 },
+            { "operation": "text", "text": "DonaTrack · Nueva insignia", "fontSize": 52, "fontColor": "#1f2937", "positionX": 120, "positionY": 150, "lineLength": 40 },
+            { "operation": "text", "text": "={{ $json.insignia }}", "fontSize": 96, "fontColor": "#0f766e", "positionX": 120, "positionY": 460, "lineLength": 16 },
+            { "operation": "text", "text": "={{ $json.nombre }}", "fontSize": 64, "fontColor": "#1f2937", "positionX": 120, "positionY": 760, "lineLength": 26 },
+            { "operation": "text", "text": "={{ 'Categoría: ' + $json.categoria }}", "fontSize": 44, "fontColor": "#4b5563", "positionX": 120, "positionY": 900, "lineLength": 40 }
+          ]
+        },
+        "options": { "format": "png", "fileName": "={{ $json.archivo }}.png" }
       },
       "id": "1b0f5a1e-0003-4c1a-9c11-000000000003",
       "name": "Generar imagen de la insignia",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [720, 300]
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [680, 300]
     },
     {
       "parameters": {
-        "text": "={{ $('Armar publicación').item.json.texto }}",
-        "additionalFields": {}
+        "operation": "write",
+        "fileName": "=/home/node/publicaciones/{{ $('Armar publicación').item.json.archivo }}.png",
+        "dataPropertyName": "data",
+        "options": {}
       },
       "id": "1b0f5a1e-0004-4c1a-9c11-000000000004",
-      "name": "Publicar en X (Twitter)",
-      "type": "n8n-nodes-base.twitter",
-      "typeVersion": 2,
-      "position": [960, 220],
-      "credentials": { "twitterOAuth2Api": { "id": "CONFIGURAR", "name": "Cuenta de UTN Solidaria" } }
+      "name": "Publicar (local): guardar imagen",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [900, 300]
     },
     {
       "parameters": {
-        "postAs": "organization",
-        "organization": "CONFIGURAR",
-        "text": "={{ $('Armar publicación').item.json.texto }}",
-        "shareMediaCategory": "IMAGE",
-        "additionalFields": {}
+        "assignments": {
+          "assignments": [
+            { "id": "b1", "name": "red", "type": "string", "value": "local (sin publicación externa)" },
+            { "id": "b2", "name": "texto", "type": "string", "value": "={{ $('Armar publicación').item.json.publicacion }}" },
+            { "id": "b3", "name": "mencion", "type": "string", "value": "={{ $('Armar publicación').item.json.mencion }}" },
+            { "id": "b4", "name": "imagen", "type": "string", "value": "={{ $('Armar publicación').item.json.archivo }}.png" },
+            { "id": "b5", "name": "donanteId", "type": "string", "value": "={{ $('Armar publicación').item.json.donanteId }}" },
+            { "id": "b6", "name": "publicadaEn", "type": "string", "value": "={{ $now.toISO() }}" }
+          ]
+        },
+        "options": {}
       },
       "id": "1b0f5a1e-0005-4c1a-9c11-000000000005",
-      "name": "Publicar en LinkedIn",
-      "type": "n8n-nodes-base.linkedIn",
-      "typeVersion": 1,
-      "position": [960, 400],
-      "credentials": { "linkedInOAuth2Api": { "id": "CONFIGURAR", "name": "UTN Solidaria" } }
+      "name": "Armar registro de la publicación",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "mode": "each",
+        "options": { "fileName": "={{ $json.imagen.replace('.png', '.json') }}" }
+      },
+      "id": "1b0f5a1e-0006-4c1a-9c11-000000000006",
+      "name": "Convertir a JSON",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/publicaciones/{{ $('Armar publicación').item.json.archivo }}.json",
+        "dataPropertyName": "data",
+        "options": {}
+      },
+      "id": "1b0f5a1e-0007-4c1a-9c11-000000000007",
+      "name": "Publicar (local): guardar post",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [1560, 300]
     }
   ],
   "connections": {
     "Webhook: insignia obtenida": { "main": [[{ "node": "Armar publicación", "type": "main", "index": 0 }]] },
     "Armar publicación": { "main": [[{ "node": "Generar imagen de la insignia", "type": "main", "index": 0 }]] },
-    "Generar imagen de la insignia": {
-      "main": [[
-        { "node": "Publicar en X (Twitter)", "type": "main", "index": 0 },
-        { "node": "Publicar en LinkedIn", "type": "main", "index": 0 }
-      ]]
-    }
+    "Generar imagen de la insignia": { "main": [[{ "node": "Publicar (local): guardar imagen", "type": "main", "index": 0 }]] },
+    "Publicar (local): guardar imagen": { "main": [[{ "node": "Armar registro de la publicación", "type": "main", "index": 0 }]] },
+    "Armar registro de la publicación": { "main": [[{ "node": "Convertir a JSON", "type": "main", "index": 0 }]] },
+    "Convertir a JSON": { "main": [[{ "node": "Publicar (local): guardar post", "type": "main", "index": 0 }]] }
   },
-  "settings": { "executionOrder": "v1" },
-  "meta": { "templateCredsSetupCompleted": false }
+  "settings": { "executionOrder": "v1" }
 }

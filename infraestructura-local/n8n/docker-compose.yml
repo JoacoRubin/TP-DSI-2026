@@ -1,0 +1,27 @@
+# =============================================================================
+#  DonaTrack - n8n local para la difusión de insignias (OPCIONAL)
+#
+#    docker compose -f infraestructura-local/n8n/docker-compose.yml up -d
+#
+#  n8n en http://localhost:5678. La imagen oficial trae GraphicsMagick (nodo Edit Image).
+#  Las "publicaciones" (imagen PNG + post JSON) quedan en ./data/n8n/publicaciones del repo.
+#  Pasos de importación y activación: docs/n8n/README.md
+# =============================================================================
+name: donatrack-n8n
+
+services:
+  n8n:
+    image: n8nio/n8n:1.72.1
+    environment:
+      GENERIC_TIMEZONE: America/Argentina/Buenos_Aires
+      TZ: America/Argentina/Buenos_Aires
+      N8N_SECURE_COOKIE: "false"   # sólo local (http)
+    ports: ["5678:5678"]
+    volumes:
+      - n8n-datos:/home/node/.n8n
+      - ../../docs/n8n:/flujos:ro
+      - ../../data/n8n/publicaciones:/home/node/publicaciones
+    restart: unless-stopped
+
+volumes:
+  n8n-datos:
