@@ -42,10 +42,6 @@ management:
   health:
     mail:
       enabled: false
-  endpoints:
-    web:
-      exposure:
-        include: health,info
 
 ---
 spring:
