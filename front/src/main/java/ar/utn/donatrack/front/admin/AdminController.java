@@ -169,8 +169,8 @@ class AdminController {
             cuerpo.put("descripcionGeneral", Formularios.texto(form, "descripcionGeneral"));
             cuerpo.put("bienes", bienes);
             List<Map<String, Object>> resultado = apis.donaciones().postLista("/api/donaciones", cuerpo);
-            Avisos.exito(ra, "Carga registrada: se generaron " + resultado.size()
-                    + (resultado.size() == 1 ? " donación" : " donaciones") + " (una por subcategoría).");
+            Avisos.exito(ra, resultado.size() == 1 ? "Carga registrada: se generó 1 donación."
+                    : "Carga registrada: se generaron " + resultado.size() + " donaciones (una por subcategoría).");
             return "redirect:/admin/donaciones";
         } catch (ErrorApi | ServicioNoDisponible e) {
             Avisos.error(ra, mensaje(e));

@@ -44,7 +44,8 @@ class AdminLogisticaController {
             Map<String, Object> r = apis.logistica().post("/api/planificaciones", null);
             Object lotes = r.get("lotesEnviados");
             Avisos.exito(ra, "0".equals(String.valueOf(lotes)) ? "No hay entregas pendientes para planificar"
-                    : "Se enviaron " + lotes + " lote(s) al planificador. Las rutas aparecerán en unos segundos.");
+                    : ("1".equals(String.valueOf(lotes)) ? "Se envió 1 lote" : "Se enviaron " + lotes + " lotes")
+                      + " al planificador. Las rutas aparecerán en unos segundos.");
         } catch (ErrorApi | ServicioNoDisponible e) {
             Avisos.error(ra, e instanceof ErrorApi ea ? ea.mensajeCompleto() : e.getMessage());
         }

@@ -66,7 +66,7 @@
                     headers: Object.assign({ 'Content-Type': 'application/json' }, DonaTrack.csrf()),
                     body: JSON.stringify({ latitud: lat, longitud: lng, velocidadKmh: velocidad || 0, registradaEn: new Date().toISOString() })
                 });
-                estado.textContent = r.ok ? 'Última posición enviada: ' + new Date().toLocaleTimeString('es-AR')
+                estado.textContent = r.ok ? 'Última posición enviada: ' + DonaTrack.horaCorta(new Date())
                                           : 'No se pudo enviar la posición (' + r.status + ')';
                 ruta.ultimaPosicion = { latitud: lat, longitud: lng, velocidadKmh: velocidad || 0, registradaEn: new Date().toISOString() };
                 // Ojo: "[[" dentro de th:inline es sintaxis de Thymeleaf; por eso los espacios.

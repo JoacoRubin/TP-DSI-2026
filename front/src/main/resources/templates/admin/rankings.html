@@ -13,7 +13,7 @@
                     <li class="tarjeta puesto" th:each="p, i : ${seleccionado.entradas}" th:if="${i.index < 3}">
                         <div class="medalla" aria-hidden="true" th:text="${i.index == 0 ? '🥇' : (i.index == 1 ? '🥈' : '🥉')}"></div>
                         <strong th:text="${p.nombre}"></strong>
-                        <div class="chico suave" th:text="${p.misionesCumplidas} + ' misiones'"></div>
+                        <div class="chico suave" th:text="${p.misionesCumplidas} + (${p.misionesCumplidas == 1} ? ' misión' : ' misiones')"></div>
                     </li>
                 </ol>
                 <div class="tabla-envoltura mt-4" th:unless="${#lists.isEmpty(seleccionado.entradas)}">

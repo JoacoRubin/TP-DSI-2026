@@ -12,7 +12,7 @@
                     <h2 class="mb-0" th:text="'Ruta del ' + ${@fmt.fecha(r.fecha)}"></h2>
                     <span class="estado" th:classappend="${@fmt.claseEstado(r.estado)}" th:text="${@fmt.estado(r.estado)}"></span>
                 </div>
-                <p class="suave mb-0 mt-4" th:text="${#lists.size(r.paradas)} + ' paradas · ' + ${r.totalEntregas} + ' entregas'"></p>
+                <p class="suave mb-0 mt-4" th:text="${@fmt.cantidad(#lists.size(r.paradas), 'parada', 'paradas')} + ' · ' + ${@fmt.cantidad(r.totalEntregas, 'entrega', 'entregas')}"></p>
             </a>
         </div>
         <p class="vacio tarjeta" th:if="${#lists.isEmpty(rutas)}">No tenés rutas asignadas. 🚚💤</p>

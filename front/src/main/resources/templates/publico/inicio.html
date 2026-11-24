@@ -76,7 +76,7 @@
                 <li class="tarjeta puesto" th:each="p, i : ${podio.entradas}">
                     <div class="medalla" aria-hidden="true" th:text="${i.index == 0 ? '🥇' : (i.index == 1 ? '🥈' : '🥉')}"></div>
                     <strong th:text="${p.nombre}"></strong>
-                    <div class="suave chico" th:text="${p.misionesCumplidas} + ' misiones cumplidas'"></div>
+                    <div class="suave chico" th:text="${p.misionesCumplidas} + (${p.misionesCumplidas == 1} ? ' misión cumplida' : ' misiones cumplidas')"></div>
                 </li>
             </ol>
         </section>

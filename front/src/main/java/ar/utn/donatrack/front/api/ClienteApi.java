@@ -1,5 +1,6 @@
 package ar.utn.donatrack.front.api;
 
+import io.micrometer.observation.ObservationRegistry;
 import ar.utn.donatrack.front.sesion.UsuarioSesion;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,7 +34,7 @@ public class ClienteApi {
     private final String servicio;
     private final RestClient cliente;
 
-    public ClienteApi(String servicio, String urlBase) {
+    public ClienteApi(String servicio, String urlBase, ObservationRegistry observaciones) {
         this.servicio = servicio;
         // Cliente HTTP del JDK: a diferencia de HttpURLConnection, expone el cuerpo de las
         // respuestas 401 (necesario para mostrar el detalle del Problem Detail).
@@ -43,6 +44,7 @@ public class ClienteApi {
                 .build());
         f.setReadTimeout(Duration.ofSeconds(20));
         this.cliente = RestClient.builder()
+                .observationRegistry(observaciones) // propaga traceparent: trazas distribuidas
                 .baseUrl(urlBase)
                 .requestFactory(f)
                 .requestInterceptor((req, body, ex) -> {

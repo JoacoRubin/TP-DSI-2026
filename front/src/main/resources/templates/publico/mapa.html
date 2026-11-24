@@ -8,7 +8,7 @@
         <h1>Donaciones entregadas</h1>
         <p class="suave">Cada marcador es una entrega confirmada por una entidad beneficiaria. Hacé clic para ver el detalle.</p>
         <div id="mapa" class="mapa skeleton" role="region" aria-label="Mapa de donaciones entregadas"></div>
-        <p class="leyenda"><span>💚 Entrega realizada</span><span th:text="${#lists.size(entregas)} + ' entregas en total'"></span></p>
+        <p class="leyenda"><span>💚 Entrega realizada</span><span th:text="${#lists.size(entregas) >= totalEntregas} ? ${@fmt.cantidad(totalEntregas, 'entrega', 'entregas') + ' en total'} : ${'Mostrando las ' + #lists.size(entregas) + ' más recientes de ' + totalEntregas + ' entregas'}"></span></p>
 
         <h2 class="mt-5">Listado</h2>
         <p class="sr-only">Versión accesible del mapa en formato de tabla.</p>

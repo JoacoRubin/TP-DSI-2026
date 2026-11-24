@@ -11,7 +11,7 @@
 
         <th:block th:if="${panel != null}">
             <div class="grilla">
-                <div class="tarjeta kpi"><span class="etiqueta">Tu categoría</span><span class="valor" th:text="${panel.categoria}"></span></div>
+                <div class="tarjeta kpi"><span class="etiqueta">Tu categoría</span><span class="valor texto" th:text="${panel.categoria}"></span></div>
                 <div class="tarjeta kpi"><span class="etiqueta">Insignias</span><span class="valor" th:text="${#lists.size(panel.insignias)}"></span></div>
                 <div class="tarjeta kpi"><span class="etiqueta">Organizaciones ayudadas</span><span class="valor" th:text="${metricas.organizacionesAyudadas}"></span></div>
                 <div class="tarjeta kpi"><span class="etiqueta">Posición en el ranking del mes</span>

@@ -1,5 +1,6 @@
 package ar.utn.donatrack.front.api;
 
+import io.micrometer.observation.ObservationRegistry;
 import org.springframework.stereotype.Component;
 
 /** Punto único de acceso a los servicios de backend. */
@@ -12,12 +13,12 @@ public class Apis {
     private final ClienteApi notificaciones;
     private final ClienteApi autenticacion;
 
-    public Apis(UrlsServicios urls) {
-        this.donaciones = new ClienteApi("donaciones", urls.donaciones());
-        this.logistica = new ClienteApi("logística", urls.logistica());
-        this.incentivos = new ClienteApi("incentivos", urls.incentivos());
-        this.notificaciones = new ClienteApi("notificaciones", urls.notificaciones());
-        this.autenticacion = new ClienteApi("autenticación", urls.autenticacion());
+    public Apis(UrlsServicios urls, ObservationRegistry observaciones) {
+        this.donaciones = new ClienteApi("donaciones", urls.donaciones(), observaciones);
+        this.logistica = new ClienteApi("logística", urls.logistica(), observaciones);
+        this.incentivos = new ClienteApi("incentivos", urls.incentivos(), observaciones);
+        this.notificaciones = new ClienteApi("notificaciones", urls.notificaciones(), observaciones);
+        this.autenticacion = new ClienteApi("autenticación", urls.autenticacion(), observaciones);
     }
 
     public ClienteApi donaciones() { return donaciones; }

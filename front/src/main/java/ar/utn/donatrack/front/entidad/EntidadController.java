@@ -85,12 +85,22 @@ class EntidadController {
      * Requerimientos 11 y 12: estado de las donaciones asignadas + confirmación de recepción. Se
      * combinan dos fuentes: el estado de la donación (Donaciones) y la entrega física (Logística).
      */
+    static final int DONACIONES_POR_PAGINA = 20;
+
     @GetMapping("/donaciones")
-    String donaciones(Model model) {
-        Map<String, Object> donaciones = apis.donaciones().get("/api/donaciones?tamanio=100");
-        Map<Object, Map<String, Object>> entregasPorDonacion = apis.logistica().lista("/api/entregas").stream()
-                .collect(Collectors.toMap(e -> e.get("donacionId"), Function.identity(), (a, b) -> a));
-        model.addAttribute("donaciones", donaciones.get("elementos"));
+    String donaciones(@RequestParam(defaultValue = "0") int pagina, Model model) {
+        Map<String, Object> resultado = apis.donaciones()
+                .get("/api/donaciones?pagina=" + Math.max(0, pagina) + "&tamanio=" + DONACIONES_POR_PAGINA);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> donaciones = (List<Map<String, Object>>) resultado.get("elementos");
+        // Sólo las entregas de ESTA página (antes: todas las de la entidad, con tope de 500).
+        // Si hay varias por donación (cancelada + nueva), Logística devuelve la más nueva primero.
+        Map<Object, Map<String, Object>> entregasPorDonacion = donaciones.isEmpty() ? Map.of()
+                : apis.logistica().lista("/api/entregas?donacionIds=" + donaciones.stream()
+                        .map(d -> String.valueOf(d.get("id"))).collect(Collectors.joining(","))).stream()
+                .collect(Collectors.toMap(e -> e.get("donacionId"), Function.identity(), (masNueva, anterior) -> masNueva));
+        model.addAttribute("resultado", resultado);
+        model.addAttribute("donaciones", donaciones);
         model.addAttribute("entregas", entregasPorDonacion);
         return "entidad/donaciones";
     }

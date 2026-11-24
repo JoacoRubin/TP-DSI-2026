@@ -19,7 +19,7 @@
                 <th:block th:if="${e != null and e.estado == 'EN_TRASLADO'}">
                     <div class="banner aviso mt-4">🚚 En camino en el camión <strong th:text="${e.patente}"></strong>.
                         <a href="/entidad/seguimiento">Ver en el mapa</a></div>
-                    <div class="grilla">
+                    <div class="grilla estirada">
                         <form th:action="@{/entidad/entregas/{id}/recepcion(id=${e.id})}" method="post" enctype="multipart/form-data">
                             <div class="campo">
                                 <label th:for="'fotos-' + ${e.id}">Fotos de lo recibido</label>
@@ -58,6 +58,7 @@
             </article>
         </div>
         <p class="vacio tarjeta" th:if="${#lists.isEmpty(donaciones)}">Todavía no tenés donaciones asignadas. ¡Publicá tus necesidades!</p>
+        <nav th:replace="~{fragmentos/layout :: paginacion(${resultado}, '/entidad/donaciones?')}"></nav>
     </div>
 </main>
 </body>

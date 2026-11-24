@@ -70,6 +70,9 @@ img { max-width: 100%; height: auto; display: block; }
 main { flex: 1; padding: var(--e-5) 0 var(--e-7); }
 main:focus { outline: none; }
 .grilla { display: grid; gap: var(--e-4); grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+/* Pocos bloques lado a lado (p. ej. dos formularios): auto-fit los estira; con auto-fill quedaban
+   columnas de 260px vacías y el campo de archivo se cortaba. */
+.grilla.estirada { grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
 .grilla-2 { display: grid; gap: var(--e-5); grid-template-columns: 1fr; }
 @media (min-width: 900px) { .grilla-2 { grid-template-columns: 2fr 1fr; } }
 .fila { display: flex; flex-wrap: wrap; gap: var(--e-3); align-items: center; }
@@ -81,18 +84,23 @@ main:focus { outline: none; }
 .barra .contenedor { display: flex; align-items: center; gap: var(--e-4); min-height: 64px; }
 .marca { display: flex; align-items: center; gap: var(--e-2); font-weight: 800; font-size: 1.25rem; color: var(--c-texto); text-decoration: none; min-height: var(--tactil); }
 .marca svg { width: 32px; height: 32px; }
-.nav { margin-left: auto; }
-.nav ul { list-style: none; margin: 0; padding: 0; display: flex; gap: var(--e-1); align-items: center; }
+/* min-width:0 + wrap: con muchos ítems (admin) el menú pasa a dos renglones en vez de desbordar
+   la página (scroll horizontal = falla de reflow WCAG 1.4.10). */
+.nav { margin-left: auto; min-width: 0; }
+.nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0; align-items: center; font-size: .9375rem; }
+/* Padding horizontal compacto y sin cortes de línea: el menú de admin (11 ítems) entra en un renglón
+   en pantallas de escritorio; el alto sigue siendo el táctil (48px). */
 .nav a, .nav button.enlace {
-  display: inline-flex; align-items: center; gap: var(--e-2); min-height: var(--tactil); padding: 0 var(--e-3);
-  border-radius: var(--r-chico); color: var(--c-texto); text-decoration: none; font-weight: 500;
+  display: inline-flex; align-items: center; gap: var(--e-2); min-height: var(--tactil); padding: 0 var(--e-2);
+  border-radius: var(--r-chico); color: var(--c-texto); text-decoration: none; font-weight: 500; white-space: nowrap;
 }
 .nav a:hover, .nav button.enlace:hover { background: var(--c-fondo); }
 .nav a[aria-current="page"] { color: var(--c-primario); background: var(--c-primario-suave); }
-.menu-boton { display: none; margin-left: auto; }
+/* Especificidad 0,2,1: debe ganarle a `button.boton { display: inline-flex }` (0,1,1), definido más abajo. */
+button.boton.menu-boton { display: none; margin-left: auto; }
 .contador { background: var(--c-acento); color: #fff; border-radius: var(--r-pildora); font-size: .75rem; padding: 0 .45rem; min-width: 1.4rem; text-align: center; }
 @media (max-width: 960px) {
-  .menu-boton { display: inline-flex; }
+  button.boton.menu-boton { display: inline-flex; }
   .nav { display: none; position: absolute; top: 64px; left: 0; right: 0; background: var(--c-superficie); border-bottom: 1px solid var(--c-borde-suave); box-shadow: var(--sombra-2); }
   .nav.abierto { display: block; }
   .nav ul { flex-direction: column; align-items: stretch; padding: var(--e-2) var(--e-4) var(--e-4); }
@@ -130,7 +138,10 @@ button.enlace { background: none; border: 0; font: inherit; cursor: pointer; }
 .tarjeta-enlace { text-decoration: none; color: inherit; display: block; transition: box-shadow var(--transicion), transform var(--transicion); }
 .tarjeta-enlace:hover { box-shadow: var(--sombra-2); transform: translateY(-2px); color: inherit; }
 .kpi { display: flex; flex-direction: column; gap: var(--e-1); }
+.kpi { min-width: 0; }
 .kpi .valor { font-size: 2rem; font-weight: 800; color: var(--c-primario); line-height: 1; }
+/* Valores de texto ("Transformador/a"): más chicos y con corte, para no salirse de la tarjeta. */
+.kpi .valor.texto { font-size: 1.5rem; line-height: 1.15; overflow-wrap: anywhere; }
 .kpi .etiqueta { color: var(--c-texto-suave); font-size: var(--f-chica); }
 
 /* ----------------------------------------------------------------------------- formularios */
@@ -146,8 +157,21 @@ textarea { min-height: 96px; resize: vertical; }
 input:focus, select:focus, textarea:focus { border-color: var(--c-foco); outline: 3px solid rgb(37 99 235 / .25); outline-offset: 0; }
 input[type=checkbox], input[type=radio] { width: 22px; height: 22px; accent-color: var(--c-primario); }
 .check { display: flex; align-items: center; gap: var(--e-3); min-height: var(--tactil); }
-input[type=file] { min-height: var(--tactil); padding: var(--e-2) 0; }
+/* Ancho explícito: el intrínseco de Chrome corta "Sin archivos seleccionados" al medio con la tipografía de la app. */
+input[type=file] { min-height: var(--tactil); padding: var(--e-2) 0; font: inherit; color: var(--c-texto-suave, inherit); width: 24rem; max-width: 100%; }
+/* El botón nativo ("Elegir archivos") con el mismo aspecto que .boton.secundario.chico. */
+input[type=file]::file-selector-button {
+  min-height: 40px; padding: 0 var(--e-4); margin-right: var(--e-3); font: inherit; font-weight: 600; cursor: pointer;
+  border: 2px solid var(--c-primario); border-radius: var(--r-pildora); background: var(--c-superficie); color: var(--c-primario);
+  transition: background var(--transicion);
+}
+input[type=file]::file-selector-button:hover { background: var(--c-primario-suave); }
 .campos { display: grid; gap: 0 var(--e-4); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+/* Como lista de datos (<dl class="campos">): etiqueta arriba y valor debajo, alineados (sin la sangría de <dd>). */
+dl.campos { margin: 0; gap: var(--e-3) var(--e-4); grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+dl.campos dt { margin: 0; }
+dl.campos dd { margin: 2px 0 0; font-weight: 600; }
+dl.campos + * { margin-top: var(--e-5); }
 fieldset { border: 1px solid var(--c-borde-suave); border-radius: var(--r-medio); padding: var(--e-4) var(--e-5) 0; margin: 0 0 var(--e-5); }
 legend { font-weight: 700; padding: 0 var(--e-2); }
 .acciones { display: flex; flex-wrap: wrap; gap: var(--e-3); justify-content: flex-end; margin-top: var(--e-4); }

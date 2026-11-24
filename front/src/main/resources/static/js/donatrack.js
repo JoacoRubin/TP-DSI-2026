@@ -116,7 +116,8 @@
   DonaTrack.icono = function (emoji, titulo) {
     return L.divIcon({
       className: '', iconSize: [36, 36], iconAnchor: [18, 18],
-      html: '<div role="img" aria-label="' + titulo + '" style="font-size:26px;line-height:36px;text-align:center;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))">' + emoji + '</div>'
+      // titulo puede traer datos de usuario (razón social): SIEMPRE escapado.
+      html: '<div role="img" aria-label="' + DonaTrack.escapar(titulo) + '" style="font-size:26px;line-height:36px;text-align:center;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))">' + DonaTrack.escapar(emoji) + '</div>'
     });
   };
 
@@ -124,10 +125,17 @@
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   };
 
+  // 'es-AR' resuelve a 12 h y Chrome omite "p. m.": las 16:10 salían "04:10". Siempre 24 h y hora argentina
+  // (la misma zona que usa el servidor), sin depender de cómo esté configurado el dispositivo.
+  const ZONA = 'America/Argentina/Buenos_Aires';
+
   DonaTrack.hora = function (iso) {
     if (!iso) return 'sin datos';
-    const d = new Date(iso);
-    return d.toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'medium' });
+    return new Date(iso).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'medium', hourCycle: 'h23', timeZone: ZONA });
+  };
+
+  DonaTrack.horaCorta = function (fecha) {
+    return new Date(fecha).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23', timeZone: ZONA });
   };
 
   /**

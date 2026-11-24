@@ -53,7 +53,7 @@
                         <tr th:each="r : ${rutas}">
                             <td data-etiqueta="Fecha" th:text="${@fmt.fecha(r.fecha)}"></td>
                             <td data-etiqueta="Camión" th:text="${r.patente}"></td>
-                            <td data-etiqueta="Paradas" th:text="${#lists.size(r.paradas)} + ' (' + ${r.totalEntregas} + ' entregas)'"></td>
+                            <td data-etiqueta="Paradas" th:text="${#lists.size(r.paradas)} + ' (' + ${@fmt.cantidad(r.totalEntregas, 'entrega', 'entregas')} + ')'"></td>
                             <td data-etiqueta="Estado"><span class="estado" th:classappend="${@fmt.claseEstado(r.estado)}" th:text="${@fmt.estado(r.estado)}"></span></td>
                         </tr>
                         <tr th:if="${#lists.isEmpty(rutas)}"><td colspan="4" class="vacio">Sin rutas todavía.</td></tr>

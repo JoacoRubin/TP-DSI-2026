@@ -88,6 +88,12 @@ public class Formato {
         return Math.round(v * 100) + "%";
     }
 
+    /** "1 parada", "3 paradas": las cantidades nunca con plural fijo ("1 paradas") ni con "(s)". */
+    public String cantidad(Object n, String singular, String plural) {
+        long v = n instanceof Number num ? num.longValue() : 0;
+        return v + " " + (v == 1 ? singular : plural);
+    }
+
     public int max(Collection<Map<String, Object>> filas, String campo) {
         return filas.stream().mapToInt(f -> f.get(campo) == null ? 0 : ((Number) f.get(campo)).intValue()).max().orElse(0);
     }

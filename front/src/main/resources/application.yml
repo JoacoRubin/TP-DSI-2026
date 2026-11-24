@@ -27,8 +27,3 @@ donatrack:
     notificaciones: ${NOTIFICACIONES_URL:http://localhost:8084}
     autenticacion: ${AUTH_URL:http://localhost:8085}
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health

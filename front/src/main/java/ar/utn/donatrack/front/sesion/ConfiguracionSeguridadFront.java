@@ -26,7 +26,7 @@ public class ConfiguracionSeguridadFront {
                 .authorizeHttpRequests(a -> a
                         .requestMatchers("/", "/galeria", "/mapa", "/legal", "/accesibilidad", "/login", "/registro/**",
                                 "/activar", "/fotos/**", "/front-api/publico/**", "/css/**", "/js/**", "/img/**",
-                                "/favicon.svg", "/error", "/actuator/health").permitAll()
+                                "/favicon.svg", "/error", "/actuator/health", "/actuator/prometheus").permitAll()
                         .requestMatchers("/donante/incentivos/**").access((auth, ctx) -> new org.springframework.security.authorization.AuthorizationDecision(
                                 auth.get().getPrincipal() instanceof UsuarioSesion u && u.esDonanteHumano()))
                         .requestMatchers("/donante/**").hasRole("DONANTE")

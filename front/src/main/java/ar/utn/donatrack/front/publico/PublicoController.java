@@ -34,12 +34,26 @@ class PublicoController {
         }
     }
 
+    /** Totales reales (agregación en Logística). Vacío si Logística no responde: la vista no inventa cifras. */
+    private Map<String, Object> resumen(int dias) {
+        try {
+            Map<String, Object> r = apis.logistica().get("/api/publico/resumen?dias={d}", dias);
+            return r == null ? Map.of() : r;
+        } catch (ServicioNoDisponible | ar.utn.donatrack.front.api.ErrorApi e) {
+            return Map.of();
+        }
+    }
+
+    /** Más marcadores degradan el mapa en el navegador; se muestran las más recientes. */
+    static final int MAXIMO_EN_MAPA = 500;
+
     @GetMapping("/")
     String inicio(Model model) {
-        List<Map<String, Object>> ultimoMes = entregasPublicas(30, 200);
-        model.addAttribute("destacadas", ultimoMes.stream().limit(6).toList());
-        model.addAttribute("entregadasMes", ultimoMes.size());
-        model.addAttribute("entidadesMes", ultimoMes.stream().map(e -> e.get("entidadNombre")).distinct().count());
+        // Antes: se traían hasta 200 entregas y se contaban; con más de 200 en el mes la cifra mentía.
+        model.addAttribute("destacadas", entregasPublicas(30, 6));
+        Map<String, Object> mes = resumen(30);
+        model.addAttribute("entregadasMes", mes.getOrDefault("entregadas", "–"));
+        model.addAttribute("entidadesMes", mes.getOrDefault("entidades", "–"));
         try {
             model.addAttribute("podio", apis.incentivos().get("/api/publico/podio"));
         } catch (RuntimeException e) {
@@ -57,7 +71,11 @@ class PublicoController {
 
     @GetMapping("/mapa")
     String mapa(Model model) {
-        model.addAttribute("entregas", entregasPublicas(3650, 500));
+        List<Map<String, Object>> entregas = entregasPublicas(3650, MAXIMO_EN_MAPA);
+        model.addAttribute("entregas", entregas);
+        Object total = resumen(3650).get("entregadas");
+        // "total" sólo si de verdad es el total; si no, se aclara que es un recorte.
+        model.addAttribute("totalEntregas", total instanceof Number n ? n.longValue() : (long) entregas.size());
         return "publico/mapa";
     }
 
