@@ -38,6 +38,14 @@ public class AplicadorProgreso {
         this.reloj = reloj;
     }
 
+    /**
+     * El hecho, sin formato de red social: el emoji, la @mención y los hashtags los agrega el flujo de
+     * difusión (n8n), que es lo que cambia si se publica en otra red. Antes se duplicaban.
+     */
+    static String textoDifusion(String nombre, String insignia) {
+        return nombre + " obtuvo la insignia \"" + insignia + "\" en DonaTrack. ¡Gracias por ayudar a quienes más lo necesitan!";
+    }
+
     public MotorIncentivos.Resultado aplicar(PerfilDonante perfil) {
         Instant ahora = reloj.instant();
         HistorialDonante historial = new HistorialDonante(actividades.deDonante(perfil.donanteId()), reloj.getZone());
@@ -48,8 +56,7 @@ public class AplicadorProgreso {
         }
         insignias.guardarTodas(r.insignias());
         for (InsigniaObtenida i : r.insignias()) {
-            String texto = "¡" + perfil.nombre() + " obtuvo la insignia " + i.icono() + " \"" + i.nombre()
-                    + "\" en DonaTrack! Gracias por ayudar a quienes más lo necesitan. #DonaTrack #UTNSolidaria";
+            String texto = textoDifusion(perfil.nombre(), i.nombre());
             notificador.notificar(perfil.comoDestinatario(), "¡Misión cumplida! " + i.icono(),
                     "Completaste la misión \"" + i.nombre() + "\" y ganaste una nueva insignia. ¡Seguí así!", "MISION_CUMPLIDA");
             if (perfil.insigniasVisibles()) {

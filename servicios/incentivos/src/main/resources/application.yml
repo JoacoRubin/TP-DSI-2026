@@ -31,10 +31,6 @@ management:
   health:
     jms:
       enabled: false
-  endpoints:
-    web:
-      exposure:
-        include: health,info
 
 ---
 spring:

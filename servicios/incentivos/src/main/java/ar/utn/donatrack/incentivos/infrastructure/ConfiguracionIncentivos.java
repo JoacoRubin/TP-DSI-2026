@@ -70,7 +70,7 @@ public class ConfiguracionIncentivos {
                 .csrf(c -> c.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers("/api/publico/**", "/actuator/health/**", "/v3/api-docs/**", "/swagger-ui/**",
+                        .requestMatchers("/api/publico/**", "/actuator/health/**", "/actuator/prometheus", "/v3/api-docs/**", "/swagger-ui/**",
                                 "/swagger-ui.html").permitAll()
                         .requestMatchers("/api/rankings/**", "/api/rankings").hasRole("ADMIN")
                         .requestMatchers("/api/donantes/**").hasAnyRole("DONANTE", "ADMIN")

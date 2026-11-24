@@ -20,9 +20,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
+import java.net.http.HttpClient;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.YearMonth;
 import java.util.Map;
 
@@ -59,11 +62,22 @@ class NotificadorPorCola implements Puertos.Notificador {
 class DifusorN8n implements Puertos.DifusorLogros {
 
     private static final Logger log = LoggerFactory.getLogger(DifusorN8n.class);
+    static final Duration CONEXION = Duration.ofSeconds(2);
+    static final Duration LECTURA = Duration.ofSeconds(5);
     private final String webhook;
-    private final RestClient cliente = RestClient.create();
+    private final RestClient cliente;
 
-    DifusorN8n(@Value("${donatrack.incentivos.webhook-n8n:}") String webhook) {
+    /**
+     * HTTP/1.1 explícito: el HttpClient del JDK por defecto pide "Upgrade: h2c" y n8n se queda con esa
+     * conexión sin responder. Y timeouts: esto corre en el consumidor de la cola; sin ellos, un n8n lento
+     * o caído traba TODAS las misiones de todos los donantes.
+     */
+    DifusorN8n(@Value("${donatrack.incentivos.webhook-n8n:}") String webhook, RestClient.Builder clientes) {
         this.webhook = webhook;
+        HttpClient http = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).connectTimeout(CONEXION).build();
+        JdkClientHttpRequestFactory fabrica = new JdkClientHttpRequestFactory(http);
+        fabrica.setReadTimeout(LECTURA);
+        this.cliente = clientes.requestFactory(fabrica).build(); // builder de Spring: ya instrumentado para trazas
     }
 
     @Override

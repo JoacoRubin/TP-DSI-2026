@@ -1,5 +1,6 @@
 package ar.utn.donatrack.incentivos.infrastructure;
 
+import ar.utn.donatrack.contratos.demo.DatosDemo.DonacionDemo;
 import ar.utn.donatrack.contratos.notificaciones.MedioNotificacion;
 import ar.utn.donatrack.incentivos.actividad.domain.ActividadDonacion;
 import ar.utn.donatrack.incentivos.actividad.domain.ActividadRepositorio;
@@ -20,7 +21,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.YearMonth;
 import java.time.ZoneId;
-import java.util.UUID;
 
 import static ar.utn.donatrack.contratos.demo.DatosDemo.*;
 
@@ -53,30 +53,36 @@ class SembradorDatosDemo implements ApplicationRunner {
         if (perfiles.buscar(DONANTE_ANA).isPresent()) {
             return;
         }
-        ZoneId zona = reloj.getZone();
-        YearMonth mes = YearMonth.now(reloj);
         sembrar(PerfilDonante.nuevo(DONANTE_ANA, "Ana Pérez", DONANTE_ANA_EMAIL, "+54 11 5555-5555", "+54 9 11 5555-5555",
-                MedioNotificacion.EMAIL, true, reloj.instant()), mes, zona, 4, true);
+                MedioNotificacion.EMAIL, true, reloj.instant()));
         sembrar(PerfilDonante.nuevo(DONANTE_ARCOS, "Arcos Plateados S.A.", DONANTE_ARCOS_EMAIL, "+54 11 4444-4444", null,
-                MedioNotificacion.EMAIL, false, reloj.instant()), mes, zona, 2, false);
-        rankings.generar(mes.minusMonths(1));
+                MedioNotificacion.EMAIL, false, reloj.instant()));
+        rankings.generar(YearMonth.now(reloj).minusMonths(1));
         log.info("Datos demo de incentivos sembrados");
     }
 
-    private void sembrar(PerfilDonante p, YearMonth mes, ZoneId zona, int meses, boolean conEntrega) {
-        String[] categorias = {"Alimentos", "Abrigo y descanso", "Vestimenta", "Útiles escolares"};
-        for (int i = meses; i >= 1; i--) {
-            YearMonth m = mes.minusMonths(i);
-            Instant fecha = m.atDay(12).atStartOfDay(zona).toInstant();
-            ActividadDonacion a = ActividadDonacion.registrada(UUID.randomUUID(), p.donanteId(), UUID.randomUUID(),
-                    categorias[i % categorias.length], "Varios", 10 * i, fecha);
-            if (conEntrega || i == 1) {
-                a.marcarEntregada(i % 2 == 0 ? ENTIDAD_HOGAR : ENTIDAD_ESCUELA, fecha.plusSeconds(86_400 * 3L));
+    /**
+     * Misma historia que siembran Donaciones y Logística ({@code DatosDemo.HISTORIA}, mismos ids): lo que el
+     * panel cuenta es lo que el donante ve en "Mis donaciones". Se evalúa donación por donación, en orden,
+     * para que cada insignia quede fechada cuando se ganó.
+     */
+    private void sembrar(PerfilDonante p) {
+        ZoneId zona = reloj.getZone();
+        for (DonacionDemo d : HISTORIA) {
+            if (!d.donanteId().equals(p.donanteId())) {
+                continue;
+            }
+            Instant registrada = d.registradaEn(reloj);
+            ActividadDonacion a = ActividadDonacion.registrada(d.id(), p.donanteId(), d.cargaId(), d.categoria(),
+                    d.subcategoria(), d.cantidad(), registrada);
+            Instant evaluacion = registrada;
+            if (d.entregada()) {
+                a.marcarEntregada(d.entregadaA(), d.entregadaEn(reloj));
+                evaluacion = d.entregadaEn(reloj);
             }
             actividades.guardar(a);
-            // Se evalúa mes a mes para que las insignias queden fechadas en su período.
             HistorialDonante h = new HistorialDonante(actividades.deDonante(p.donanteId()), zona);
-            insignias.guardarTodas(motor.evaluar(p, h, m, fecha.plusSeconds(86_400 * 4L)).insignias());
+            insignias.guardarTodas(motor.evaluar(p, h, YearMonth.from(evaluacion.atZone(zona)), evaluacion).insignias());
         }
         perfiles.guardar(p);
     }
