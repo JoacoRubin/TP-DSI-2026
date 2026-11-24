@@ -89,10 +89,13 @@ if (-not (Test-Path -Path $MAVEN_M2_PATH)) {
 }
 
 $MAVEN_WRAPPER_DISTS = $null
-if ((Get-Item $MAVEN_M2_PATH).Target[0] -eq $null) {
+# DonaTrack: en Windows PowerShell 5.1 .Target es $null si .m2 no es un enlace, e indexar $null[0]
+# falla ("Cannot index into a null array"). Se compara el objeto ANTES de indexarlo.
+$MAVEN_M2_TARGET = (Get-Item $MAVEN_M2_PATH).Target
+if ($null -eq $MAVEN_M2_TARGET -or @($MAVEN_M2_TARGET).Count -eq 0 -or $null -eq @($MAVEN_M2_TARGET)[0]) {
   $MAVEN_WRAPPER_DISTS = "$MAVEN_M2_PATH/wrapper/dists"
 } else {
-  $MAVEN_WRAPPER_DISTS = (Get-Item $MAVEN_M2_PATH).Target[0] + "/wrapper/dists"
+  $MAVEN_WRAPPER_DISTS = @($MAVEN_M2_TARGET)[0] + "/wrapper/dists"
 }
 
 $MAVEN_HOME_PARENT = "$MAVEN_WRAPPER_DISTS/$distributionUrlNameMain"

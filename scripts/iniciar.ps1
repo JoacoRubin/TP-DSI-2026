@@ -1,67 +1,64 @@
 # =============================================================================
 #  DonaTrack - arranque local en Windows (PowerShell)
-#  Uso:  .\scripts\iniciar.ps1            (compila si hace falta y levanta todo)
+#  Uso:  .\scripts\iniciar.ps1                  (compila si hace falta, levanta todo y el vigilante)
 #        .\scripts\iniciar.ps1 -Recompilar
+#        .\scripts\iniciar.ps1 -SinVigilante     (sin reinicio automático)
 #  Requisitos: JDK 21 (JAVA_HOME o java en el PATH). Maven NO es necesario (usa mvnw).
+#  Componentes: scripts\componentes.csv (única fuente, compartida con iniciar.sh y el vigilante).
 # =============================================================================
-param([switch]$Recompilar)
+param([switch]$Recompilar, [switch]$SinVigilante)
 
 $ErrorActionPreference = "Stop"
-$raiz = Split-Path -Parent $PSScriptRoot
-Set-Location $raiz
-New-Item -ItemType Directory -Force -Path "$raiz\logs" | Out-Null
+. (Join-Path $PSScriptRoot "comun.ps1")
+Set-Location $Raiz
+New-Item -ItemType Directory -Force -Path "$Raiz\logs" | Out-Null
 
-$java = if ($env:JAVA_HOME) { Join-Path $env:JAVA_HOME "bin\java.exe" } else { "java" }
-
-# Orden de arranque: infraestructura -> autenticación -> servicios -> front
-$componentes = @(
-    @{ nombre = "broker";         jar = "infraestructura-local\broker\target\broker-1.0.0-SNAPSHOT.jar";                    salud = "http://localhost:8161/actuator/health" },
-    @{ nombre = "autenticacion";  jar = "servicios\autenticacion\target\servicio-autenticacion-1.0.0-SNAPSHOT.jar";         salud = "http://localhost:8085/actuator/health" },
-    @{ nombre = "notificaciones"; jar = "servicios\notificaciones\target\servicio-notificaciones-1.0.0-SNAPSHOT.jar";       salud = "http://localhost:8084/actuator/health" },
-    @{ nombre = "donaciones";     jar = "servicios\donaciones\target\servicio-donaciones-1.0.0-SNAPSHOT.jar";               salud = "http://localhost:8081/actuator/health" },
-    @{ nombre = "logistica";      jar = "servicios\logistica\target\servicio-logistica-1.0.0-SNAPSHOT.jar";                 salud = "http://localhost:8082/actuator/health" },
-    @{ nombre = "incentivos";     jar = "servicios\incentivos\target\servicio-incentivos-1.0.0-SNAPSHOT.jar";               salud = "http://localhost:8083/actuator/health" },
-    @{ nombre = "planificador";   jar = "externos\planificador-rutas\target\planificador-rutas-1.0.0-SNAPSHOT.jar";         salud = "http://localhost:8090/actuator/health" },
-    @{ nombre = "front";          jar = "front\target\front-1.0.0-SNAPSHOT.jar";                                             salud = "http://localhost:8080/actuator/health" }
-)
+$componentes = Get-Componentes
 
 $faltaAlguno = $componentes | Where-Object { -not (Test-Path $_.jar) }
 if ($Recompilar -or $faltaAlguno) {
     Write-Host "Compilando todos los módulos (la primera vez descarga dependencias)..." -ForegroundColor Cyan
-    & .\mvnw.cmd -q -B -DskipTests package
+    # clean: sin él, maven-jar-plugin NO rearma el jar de un módulo cuyo código no cambió aunque
+    # haya cambiado una dependencia interna (plataforma/*), y se ejecutaría la versión vieja.
+    & .\mvnw.cmd -q -B -DskipTests clean package
     if ($LASTEXITCODE -ne 0) { throw "Falló la compilación" }
 }
 
-function Esperar-Salud($url, $nombre, $segundos) {
-    $limite = (Get-Date).AddSeconds($segundos)
-    while ((Get-Date) -lt $limite) {
-        try { if ((Invoke-WebRequest -UseBasicParsing -Uri $url -TimeoutSec 2).StatusCode -eq 200) { return $true } } catch { }
-        Start-Sleep -Seconds 2
-    }
-    Write-Warning "$nombre no respondió en $segundos s. Revisá logs\$nombre.log"
-    return $false
+# Trazas distribuidas: sólo se exportan si el stack de observabilidad (Tempo) está levantado.
+if (Test-Salud "http://localhost:3200/ready" 2) {
+    $env:DONATRACK_TRAZAS = "true"
+    Write-Host "Stack de observabilidad detectado: trazas activadas (Grafana en http://localhost:3000)" -ForegroundColor Cyan
 }
 
-$pids = @()
+$caidos = @()
 foreach ($c in $componentes) {
     Write-Host ("Iniciando {0,-15}" -f $c.nombre) -NoNewline
-    $p = Start-Process -FilePath $java -ArgumentList @("-Xmx384m", "-XX:+UseSerialGC", "-jar", $c.jar) `
-        -RedirectStandardOutput "logs\$($c.nombre).log" -RedirectStandardError "logs\$($c.nombre).err.log" `
-        -WindowStyle Hidden -PassThru
-    $pids += $p.Id
-    $espera = if ($c.nombre -eq "logistica") { 240 } else { 120 }   # Mongo embebido se descarga la 1ra vez
+    Iniciar-Componente $c | Out-Null
+    # broker y autenticación primero: el resto depende de ellos al arrancar.
     if ($c.nombre -in @("broker", "autenticacion")) {
-        if (Esperar-Salud $c.salud $c.nombre $espera) { Write-Host " OK" -ForegroundColor Green }
+        if (Esperar-Salud $c) { Write-Host " OK" -ForegroundColor Green }
+        else { Write-Host " SIN RESPUESTA" -ForegroundColor Red; $caidos += $c.nombre }
     } else { Write-Host " lanzado" }
 }
-$pids | Set-Content "logs\pids.txt"
 
 foreach ($c in $componentes | Where-Object { $_.nombre -notin @("broker", "autenticacion") }) {
-    $espera = if ($c.nombre -eq "logistica") { 240 } else { 120 }
-    if (Esperar-Salud $c.salud $c.nombre $espera) { Write-Host ("{0,-15} OK" -f $c.nombre) -ForegroundColor Green }
+    if (Esperar-Salud $c) { Write-Host ("{0,-15} OK" -f $c.nombre) -ForegroundColor Green }
+    else { Write-Host ("{0,-15} SIN RESPUESTA" -f $c.nombre) -ForegroundColor Red; $caidos += $c.nombre }
+}
+
+if (-not $SinVigilante) {
+    $v = Start-Process -FilePath "powershell" -WindowStyle Hidden -PassThru `
+        -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", (Join-Path $PSScriptRoot "vigilante.ps1"))
+    $v.Id | Set-Content (Join-Path $DirPids "vigilante.pid")
+    Write-Host "Vigilante activo (reinicio automático). Eventos en logs\vigilante.json" -ForegroundColor Cyan
 }
 
 Write-Host ""
+if ($caidos.Count -gt 0) {
+    Write-Host ("DonaTrack arrancó INCOMPLETO. Sin respuesta: {0}" -f ($caidos -join ", ")) -ForegroundColor Red
+    Write-Host "Revisá logs\<componente>.log y logs\<componente>.err.log. Para detener: .\scripts\detener.ps1"
+    exit 1
+}
 Write-Host "DonaTrack está corriendo en http://localhost:8080" -ForegroundColor Green
 Write-Host "Cuentas demo (clave Demo1234!): admin@donatrack.org, ana@donatrack.org, escuela10@donatrack.org, chofer@donatrack.org"
 Write-Host "Para detener: .\scripts\detener.ps1"

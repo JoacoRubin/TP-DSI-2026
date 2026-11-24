@@ -1,5 +1,6 @@
 target/
 data/
+data-respaldo-*/
 logs/
 *.log
 .idea/
@@ -8,3 +9,4 @@ logs/
 .DS_Store
 # Claves RSA generadas en desarrollo
 **/claves/
+node_modules/

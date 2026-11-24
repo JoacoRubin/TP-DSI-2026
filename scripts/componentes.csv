@@ -1,0 +1,9 @@
+nombre,jar,puerto,espera
+broker,infraestructura-local/broker/target/broker-1.0.0-SNAPSHOT.jar,8161,120
+autenticacion,servicios/autenticacion/target/servicio-autenticacion-1.0.0-SNAPSHOT.jar,8085,120
+notificaciones,servicios/notificaciones/target/servicio-notificaciones-1.0.0-SNAPSHOT.jar,8084,120
+donaciones,servicios/donaciones/target/servicio-donaciones-1.0.0-SNAPSHOT.jar,8081,120
+logistica,servicios/logistica/target/servicio-logistica-1.0.0-SNAPSHOT.jar,8082,240
+incentivos,servicios/incentivos/target/servicio-incentivos-1.0.0-SNAPSHOT.jar,8083,120
+planificador,externos/planificador-rutas/target/planificador-rutas-1.0.0-SNAPSHOT.jar,8090,120
+front,front/target/front-1.0.0-SNAPSHOT.jar,8080,120

@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
-RAIZ="$(cd "$(dirname "$0")/.." && pwd)"
-[[ -f "$RAIZ/logs/pids.txt" ]] || { echo "No hay procesos registrados."; exit 0; }
-while read -r pid; do kill "$pid" 2>/dev/null && echo "Detenido $pid"; done < "$RAIZ/logs/pids.txt"
-rm -f "$RAIZ/logs/pids.txt"
+# Detiene el vigilante (primero, para que no reinicie lo que estamos apagando) y todos los componentes.
+source "$(dirname "$0")/comun.sh"
+[[ -d "$DIR_PIDS" ]] || { echo "No hay procesos registrados."; exit 0; }
+detener_componente vigilante
+for f in "$DIR_PIDS"/*.pid; do
+  [[ -e "$f" ]] || continue
+  n="$(basename "$f" .pid)"
+  detener_componente "$n" && echo "Detenido $n"
+done
 echo "DonaTrack detenido."

@@ -1,9 +1,10 @@
-# Detiene todos los procesos lanzados por iniciar.ps1
-$raiz = Split-Path -Parent $PSScriptRoot
-$archivo = Join-Path $raiz "logs\pids.txt"
-if (-not (Test-Path $archivo)) { Write-Host "No hay procesos registrados."; exit 0 }
-Get-Content $archivo | ForEach-Object {
-    try { Stop-Process -Id ([int]$_) -Force -ErrorAction Stop; Write-Host "Detenido PID $_" } catch { }
+# Detiene el vigilante (primero, para que no reinicie lo que estamos apagando) y todos los componentes.
+. (Join-Path $PSScriptRoot "comun.ps1")
+if (-not (Test-Path $DirPids)) { Write-Host "No hay procesos registrados."; exit 0 }
+Detener-Componente "vigilante"
+Get-ChildItem $DirPids -Filter *.pid | ForEach-Object {
+    $nombre = $_.BaseName
+    Detener-Componente $nombre
+    Write-Host "Detenido $nombre"
 }
-Remove-Item $archivo
 Write-Host "DonaTrack detenido."

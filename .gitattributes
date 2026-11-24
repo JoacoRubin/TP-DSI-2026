@@ -1,0 +1,6 @@
+# Fin de línea fijo por tipo: en Windows (core.autocrlf=true) un .sh con CRLF rompe bash
+# ("$'\r': command not found") y un .cmd con LF puede romper cmd.exe.
+*.sh    text eol=lf
+mvnw    text eol=lf
+*.cmd   text eol=crlf
+*.ps1   text eol=crlf
