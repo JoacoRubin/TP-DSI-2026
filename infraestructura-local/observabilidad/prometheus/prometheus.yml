@@ -1,0 +1,25 @@
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+rule_files:
+  - /etc/prometheus/alertas.yml
+
+scrape_configs:
+  - job_name: donatrack
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["host.docker.internal:8080"]
+        labels: { servicio: front }
+      - targets: ["host.docker.internal:8081"]
+        labels: { servicio: donaciones }
+      - targets: ["host.docker.internal:8082"]
+        labels: { servicio: logistica }
+      - targets: ["host.docker.internal:8083"]
+        labels: { servicio: incentivos }
+      - targets: ["host.docker.internal:8084"]
+        labels: { servicio: notificaciones }
+      - targets: ["host.docker.internal:8085"]
+        labels: { servicio: autenticacion }
+      - targets: ["host.docker.internal:8090"]
+        labels: { servicio: planificador }

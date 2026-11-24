@@ -1,0 +1,34 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    url: http://prometheus:9090
+    isDefault: true
+
+  - name: Tempo
+    uid: tempo
+    type: tempo
+    url: http://tempo:3200
+    jsonData:
+      # De una traza a los logs de esa misma traza
+      tracesToLogsV2:
+        datasourceUid: loki
+        filterByTraceID: true
+        customQuery: true
+        query: '{servicio=~".+"} |= "$${__trace.traceId}"'
+      serviceMap:
+        datasourceUid: prometheus
+
+  - name: Loki
+    uid: loki
+    type: loki
+    url: http://loki:3100
+    jsonData:
+      # De un log (campo traceId del JSON ECS) a la traza distribuida en Tempo
+      derivedFields:
+        - name: traceId
+          matcherRegex: '"traceId":"(\w+)"'
+          datasourceUid: tempo
+          url: '$${__value.raw}'

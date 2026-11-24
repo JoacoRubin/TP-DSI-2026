@@ -20,6 +20,7 @@
 
     <modules>
         <module>plataforma/contratos</module>
+        <module>plataforma/observabilidad</module>
         <module>plataforma/soporte</module>
         <module>infraestructura-local/broker</module>
         <module>servicios/autenticacion</module>
@@ -43,6 +44,11 @@
             <dependency>
                 <groupId>ar.utn.donatrack</groupId>
                 <artifactId>contratos</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ar.utn.donatrack</groupId>
+                <artifactId>observabilidad</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

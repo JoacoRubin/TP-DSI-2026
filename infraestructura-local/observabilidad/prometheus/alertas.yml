@@ -1,0 +1,44 @@
+# Monitoreo proactivo: estas reglas avisan ANTES de que un usuario reporte el problema.
+# Se ven en Prometheus (Alerts) y en el dashboard de Grafana. El reinicio automático lo hace
+# scripts/vigilante.* (ver docs/observabilidad.md).
+groups:
+  - name: donatrack
+    rules:
+      - alert: ServicioCaido
+        expr: up{job="donatrack"} == 0
+        for: 30s
+        labels: { severidad: critica }
+        annotations:
+          resumen: "{{ $labels.servicio }} no responde a Prometheus hace más de 30 s"
+
+      - alert: TasaDeErrores5xxAlta
+        expr: |
+          sum by (servicio) (rate(http_server_requests_seconds_count{status=~"5.."}[2m]))
+            / sum by (servicio) (rate(http_server_requests_seconds_count[2m])) > 0.05
+        for: 2m
+        labels: { severidad: alta }
+        annotations:
+          resumen: "{{ $labels.servicio }}: más del 5% de las respuestas son 5xx"
+
+      - alert: LatenciaP95Alta
+        expr: |
+          histogram_quantile(0.95, sum by (servicio, le) (rate(http_server_requests_seconds_bucket[5m]))) > 2
+        for: 5m
+        labels: { severidad: media }
+        annotations:
+          resumen: "{{ $labels.servicio }}: p95 de latencia mayor a 2 s"
+
+      - alert: MemoriaHeapAlta
+        expr: |
+          sum by (servicio) (jvm_memory_used_bytes{area="heap"}) / sum by (servicio) (jvm_memory_max_bytes{area="heap"}) > 0.9
+        for: 5m
+        labels: { severidad: media }
+        annotations:
+          resumen: "{{ $labels.servicio }}: heap por encima del 90%"
+
+      - alert: RateLimitingActivo
+        expr: sum by (politica) (rate(donatrack_limite_rechazos_total[5m])) > 1
+        for: 2m
+        labels: { severidad: info }
+        annotations:
+          resumen: "Rate limiting rechazando tráfico de la política {{ $labels.politica }} (posible abuso)"

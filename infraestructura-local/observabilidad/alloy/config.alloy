@@ -1,0 +1,35 @@
+// Lee los logs JSON (formato ECS) que escribe cada servicio en logs/<servicio>.json
+// y los envía a Loki con etiquetas de servicio y nivel.
+
+local.file_match "donatrack" {
+  path_targets = [{"__path__" = "/logs/*.json"}]
+}
+
+loki.source.file "donatrack" {
+  targets    = local.file_match.donatrack.targets
+  forward_to = [loki.process.ecs.receiver]
+}
+
+loki.process "ecs" {
+  stage.json {
+    expressions = {
+      servicio = "service.name",
+      nivel    = "log.level",
+    }
+  }
+
+  stage.labels {
+    values = {
+      servicio = "",
+      nivel    = "",
+    }
+  }
+
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

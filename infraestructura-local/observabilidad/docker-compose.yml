@@ -1,0 +1,67 @@
+# =============================================================================
+#  DonaTrack - stack de observabilidad (OPCIONAL: el sistema corre igual sin él)
+#
+#    docker compose -f infraestructura-local/observabilidad/docker-compose.yml up -d
+#
+#  Grafana     http://localhost:3000   (sin login en local; dashboard "DonaTrack")
+#  Prometheus  http://localhost:9090   (métricas + reglas de alerta)
+#  Tempo       :4318 recibe trazas OTLP; scripts/iniciar.* lo detecta y activa DONATRACK_TRAZAS
+#  Loki        recibe los logs JSON de ../../logs/*.json vía Alloy
+# =============================================================================
+name: donatrack-observabilidad
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-lifecycle
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alertas.yml:/etc/prometheus/alertas.yml:ro
+    ports: ["9090:9090"]
+    extra_hosts: ["host.docker.internal:host-gateway"]   # los servicios corren en el host
+    restart: unless-stopped
+
+  tempo:
+    image: grafana/tempo:2.6.1
+    user: "0"   # sólo local: escribe en un volumen recién creado
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-datos:/var/tempo
+    ports:
+      - "3200:3200"   # API de consulta (Grafana) y /ready
+      - "4318:4318"   # OTLP HTTP (los servicios envían acá)
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.2.1
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    ports: ["3100:3100"]
+    restart: unless-stopped
+
+  alloy:
+    image: grafana/alloy:v1.4.3
+    command: ["run", "/etc/alloy/config.alloy", "--storage.path=/var/lib/alloy/data"]
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - ../../logs:/logs:ro
+    depends_on: [loki]
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ["3000:3000"]
+    depends_on: [prometheus, tempo, loki]
+    restart: unless-stopped
+
+volumes:
+  tempo-datos:
