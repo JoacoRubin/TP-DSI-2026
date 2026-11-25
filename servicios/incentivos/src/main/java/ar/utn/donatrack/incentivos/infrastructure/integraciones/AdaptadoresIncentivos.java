@@ -10,7 +10,7 @@ import ar.utn.donatrack.incentivos.misiones.application.Puertos;
 import ar.utn.donatrack.incentivos.misiones.domain.InsigniaObtenida;
 import ar.utn.donatrack.incentivos.misiones.domain.PerfilDonante;
 import ar.utn.donatrack.incentivos.ranking.application.Rankings;
-import ar.utn.donatrack.soporte.mensajeria.PublicadorMensajes;
+import ar.utn.donatrack.incentivos.infrastructure.outbox.PublicadorColasConOutbox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,8 +18,6 @@ import org.springframework.jms.annotation.JmsListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
@@ -29,28 +27,22 @@ import java.time.Duration;
 import java.time.YearMonth;
 import java.util.Map;
 
+/**
+ * Los avisos (misión cumplida, nueva categoría) salen vía outbox: se confirman o se descartan junto
+ * con la insignia, y no se pierden si el proceso cae después del commit o el broker está caído.
+ */
 @Component
 class NotificadorPorCola implements Puertos.Notificador {
 
-    private final PublicadorMensajes publicador;
+    private final PublicadorColasConOutbox colas;
 
-    NotificadorPorCola(PublicadorMensajes publicador) {
-        this.publicador = publicador;
+    NotificadorPorCola(PublicadorColasConOutbox colas) {
+        this.colas = colas;
     }
 
     @Override
     public void notificar(Destinatario d, String asunto, String mensaje, String tipo) {
-        SolicitudNotificacion s = SolicitudNotificacion.de(d, asunto, mensaje, tipo, "incentivos");
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    publicador.publicar(Colas.NOTIFICACIONES, s);
-                }
-            });
-        } else {
-            publicador.publicar(Colas.NOTIFICACIONES, s);
-        }
+        colas.publicar(Colas.NOTIFICACIONES, SolicitudNotificacion.de(d, asunto, mensaje, tipo, "incentivos"));
     }
 }
 
