@@ -157,6 +157,8 @@ textarea { min-height: 96px; resize: vertical; }
 input:focus, select:focus, textarea:focus { border-color: var(--c-foco); outline: 3px solid rgb(37 99 235 / .25); outline-offset: 0; }
 input[type=checkbox], input[type=radio] { width: 22px; height: 22px; accent-color: var(--c-primario); }
 .check { display: flex; align-items: center; gap: var(--e-3); min-height: var(--tactil); }
+/* Sin esto, un texto de varias líneas encoge la casilla (flex-shrink: 1) por debajo del área táctil. */
+.check > input { flex-shrink: 0; }
 /* Ancho explícito: el intrínseco de Chrome corta "Sin archivos seleccionados" al medio con la tipografía de la app. */
 input[type=file] { min-height: var(--tactil); padding: var(--e-2) 0; font: inherit; color: var(--c-texto-suave, inherit); width: 24rem; max-width: 100%; }
 /* El botón nativo ("Elegir archivos") con el mismo aspecto que .boton.secundario.chico. */
