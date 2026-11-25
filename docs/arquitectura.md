@@ -126,8 +126,11 @@ Nadie hace JOIN contra la base de otro. Las copias desnormalizadas se justifican
 
 * **Contratos** en el módulo `plataforma/contratos` (Java puro). El tipo viaja como identificador lógico (`_tipo=ruta.iniciada`), no como nombre de clase.
 * **Entrega "al menos una vez"** + **consumidores idempotentes** (cada caso de uso verifica el estado antes de transicionar; Notificaciones usa el id del mensaje).
-* **Publicación post-commit**: si la transacción se revierte, el mensaje no sale (versión liviana del patrón *Transactional Outbox*).
-* **Transactional Outbox hacia Logística**: `solicitarEntrega` / `cancelarEntrega` no llaman por HTTP dentro de la transacción; se guardan en `outbox_mensajes` **en la misma transacción** que los cambios de la donación (`ServicioLogisticaConOutbox`). `DespachadorOutbox` los entrega cada 3 s, en orden por donación, con hasta 20 reintentos ante caídas; un rechazo 4xx queda `FALLIDO` y se loguea. Garantía "al menos una vez": Logística es idempotente por donación (índice único parcial `ux_entrega_activa_por_donacion`: una sola entrega no cancelada por donación).
+* **Transactional Outbox en Donaciones** (tabla `outbox_mensajes`), para todo lo que sale del servicio como efecto de un caso de uso:
+  * **Comandos a Logística**: `solicitarEntrega` / `cancelarEntrega` no llaman por HTTP dentro de la transacción (`ServicioLogisticaConOutbox`).
+  * **Mensajes JMS**: las `SolicitudNotificacion` y los eventos a Incentivos (`DonacionRegistrada`, `DonacionEntregada`) no se publican en el broker dentro de la transacción (`PublicadorColasConOutbox`); se guardan como `JMS:<tipo lógico>` con la cola como clave.
+
+  Se guardan **en la misma transacción** que los cambios de la donación: si hay rollback, desaparecen con ella; si confirma, salen aunque el proceso caiga justo después del commit. `DespachadorOutbox` los entrega cada 3 s, en orden por clave (donación o cola), con hasta 20 reintentos ante caídas; un rechazo de negocio queda `FALLIDO` y se loguea. Garantía "al menos una vez", con destinos idempotentes: Logística por donación (índice único parcial `ux_entrega_activa_por_donacion`), Notificaciones por id de solicitud, Incentivos por id de donación.
 * **Reintentos y DLQ**: 5 intentos con backoff exponencial y luego *Dead Letter Queue*.
 * **Tolerancia a eventos perdidos**: `RutaIniciada` puede "ponerse al día" si no llegó `EntregaPlanificada`.
 
@@ -169,4 +172,4 @@ sequenceDiagram
 | Rate limiting | **Implementado** en el BFF (front): Bucket4j por IP, 3 políticas, 429 + `Retry-After` | Bucket distribuido (Redis) o en el API Gateway si hay varias instancias |
 | gRPC / GraphQL | **Implementado**: GraphQL en Logística (`/graphql`, rol ADMIN): filtros combinables + selección de campos + paginación | Consumirlo desde el dashboard de monitoreo del front |
 | Microservicios (bonus) | Servicios independientes ya desplegables por separado | Spring Cloud Gateway + Eureka/Consul; el front pasaría a hablar sólo con el gateway |
-| Outbox (bonus) | **Implementado** para comandos Donaciones → Logística (`outbox_mensajes` + `DespachadorOutbox`) | Extenderlo a los eventos JMS (hoy post-commit) y despachar con `SELECT ... FOR UPDATE SKIP LOCKED` para varias instancias |
+| Outbox (bonus) | **Implementado** en Donaciones para comandos a Logística, notificaciones y eventos a Incentivos (`outbox_mensajes` + `DespachadorOutbox`) | Llevarlo a Incentivos (hoy sus notificaciones son post-commit) y despachar con `SELECT ... FOR UPDATE SKIP LOCKED` para varias instancias |

@@ -325,8 +325,9 @@ sequenceDiagram
     Admin->>F: Confirmar entidad para la donación
     F->>D: POST /api/donaciones/{id}/asignacion (JWT usuario)
     D->>D: Donacion.asignarA() · Necesidad.comprometer()
-    D->>L: POST /api/entregas (token de servicio)
-    D-->>B: SolicitudNotificacion ×2 (post-commit)
+    D->>D: outbox: SolicitarEntrega + SolicitudNotificacion ×2 (misma transacción)
+    D->>L: POST /api/entregas (despachador, token de servicio)
+    D-->>B: SolicitudNotificacion ×2 (despachador)
     B-->>N: entidad y donante notificados
     Note over L,P: 02:00 (o a demanda)
     L->>P: POST /api/planificaciones (lote ≤ 100, callbackUrl)
