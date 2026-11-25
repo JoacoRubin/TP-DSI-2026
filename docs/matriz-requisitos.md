@@ -103,6 +103,7 @@ parcial · ❌ no implementado (decisión explícita, ver
 | Hallazgo | Corrección | Evidencia |
 |---|---|---|
 | El vigilante no se detenía y relanzaba lo que `detener.sh` apagaba | el vigilante registra su propio PID de Windows y además termina solo si desaparece su pid file | 45 s después de `detener.sh`: 0 procesos vivos |
+| `detener.sh` dejó vivos front e Incentivos: borró sus `.pid` sin matarlos (el PID registrado no era el del `java.exe`) | PID real tomado del log del servicio (`with PID N`) y verificado contra el puerto; `detener.sh` exige puerto libre y nunca mata un proceso ajeno | 3 escenarios en vivo (ver `docs/observabilidad.md`) |
 | `--recompilar` dejaba JARs viejos si sólo cambiaba un módulo compartido | `clean package` en `iniciar.sh` / `iniciar.ps1` | los 7 JARs con la versión nueva de `observabilidad` |
 | Tempo lleno de trazas de `/actuator`, Spring Security y `@Scheduled` | `ObservacionesWeb` + 2 propiedades | `SinObservarActuatorTest`, `ValoresObservabilidadTest`; en vivo, 12 de 12 trazas son acciones reales |
 | **La cola de Incentivos quedaba bloqueada para siempre**: el HttpClient del JDK pide `Upgrade: h2c`, n8n no responde y la llamada no tenía timeout | HTTP/1.1 explícito + timeouts (2 s conexión, 5 s lectura) en `DifusorN8n` | `DifusorN8nTest`; en vivo, el evento trabado se re-entregó al reiniciar y se procesó |

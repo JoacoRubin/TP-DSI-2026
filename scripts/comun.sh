@@ -56,10 +56,48 @@ iniciar_componente() { # nombre jar
   echo "$pid"
 }
 
-detener_componente() { # nombre
+matar_pid() { if es_windows; then taskkill //PID "$1" //T //F >/dev/null 2>&1; else kill "$1" 2>/dev/null; fi; }
+
+# PID que el propio servicio anota al arrancar (Spring Boot: "Started ... with PID N"). Es el PID
+# real del java.exe, aun cuando el que se registró desde Git Bash no lo sea (pasó: detener.sh
+# "detuvo" front e incentivos sin matarlos y quedaron escuchando).
+pid_del_log() { [[ -f "$RAIZ/logs/$1.log" ]] && grep -oE 'with PID [0-9]+' "$RAIZ/logs/$1.log" | head -1 | grep -oE '[0-9]+'; }
+
+# PID que escucha en el puerto TCP (vacío si nadie). En Windows, por netstat: la dirección remota
+# de un socket en escucha es *:0, así no depende del idioma de la columna "Estado".
+pid_en_puerto() {
+  if es_windows; then
+    netstat -ano -p TCP 2>/dev/null | tr -d '\r' | awk -v p=":$1" '$1 == "TCP" && $2 ~ (p "$") && $3 ~ /:0$/ {print $5; exit}'
+  elif command -v lsof >/dev/null 2>&1; then
+    lsof -t -iTCP:"$1" -sTCP:LISTEN 2>/dev/null | head -1
+  fi
+}
+
+# Tras un health OK: si el servicio que escucha en el puerto es el que dice el log, ése es el PID
+# real y se registra (corrige un PID mal tomado al arrancar).
+confirmar_pid() { # nombre puerto
+  local propio; propio="$(pid_del_log "$1")"
+  [[ -n "$propio" && "$propio" == "$(pid_en_puerto "$2")" ]] && echo "$propio" > "$DIR_PIDS/$1.pid"
+  return 0
+}
+
+# Con puerto, además de matar el PID registrado verifica que el puerto quede libre. Si sigue ocupado
+# y quien escucha es NUESTRO proceso (PID del log == PID en el puerto), lo mata. A un proceso ajeno
+# no lo toca: avisa, conserva el .pid y devuelve 1. Nunca da por detenido algo que sigue vivo.
+detener_componente() { # nombre [puerto]
   local id; id="$(pid_de "$1")"
-  if proceso_vivo "$id"; then
-    if es_windows; then taskkill //PID "$id" //T //F >/dev/null 2>&1; else kill "$id" 2>/dev/null; fi
+  proceso_vivo "$id" && matar_pid "$id"
+  if [[ -n "${2:-}" ]]; then
+    local escucha=""
+    for _ in 1 2 3 4 5; do escucha="$(pid_en_puerto "$2")"; [[ -z "$escucha" ]] && break; sleep 1; done
+    if [[ -n "$escucha" && "$escucha" == "$(pid_del_log "$1")" ]]; then
+      matar_pid "$escucha"
+      for _ in 1 2 3 4 5; do escucha="$(pid_en_puerto "$2")"; [[ -z "$escucha" ]] && break; sleep 1; done
+    fi
+    if [[ -n "$escucha" ]]; then
+      echo "ATENCIÓN: el puerto $2 de $1 sigue ocupado por el PID $escucha (no se detuvo)." >&2
+      return 1
+    fi
   fi
   rm -f "$DIR_PIDS/$1.pid"
 }

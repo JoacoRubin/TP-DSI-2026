@@ -77,6 +77,14 @@ que MSYS reemplaza al hacer `exec`, y con ese PID `taskkill` no lo encontraba y 
 relanzaba todo lo que se acababa de detener. Segunda barrera: si `logs/pids/vigilante.pid`
 desaparece, el vigilante termina solo antes de relanzar cualquier cosa.
 
+**PID real y puerto libre (25/11/2026):** una vez `detener.sh` borró los `.pid` del front y de Incentivos
+sin matarlos (el PID registrado desde Git Bash no era el del `java.exe`) y quedaron escuchando. Ahora:
+* El PID confiable es el que el servicio anota en su log (`Started ... with PID N`). `iniciar.sh` lo
+  registra tras el health OK, y el vigilante corrige un `.pid` equivocado en lugar de "reiniciar" un servicio sano.
+* `detener.sh` recorre `componentes.csv` y verifica que cada **puerto** quede libre. Si sigue ocupado
+  por NUESTRO proceso (PID del log == PID que escucha en el puerto), lo mata. A un proceso ajeno no
+  lo toca: avisa, conserva el `.pid` y sale con 1. El vigilante tampoco relanza sobre un puerto ocupado.
+
 ### Validación en vivo (Git Bash, 24/11/2026)
 
 | Qué | Resultado |
@@ -88,6 +96,7 @@ desaparece, el vigilante termina solo antes de relanzar cualquier cosa.
 | Detección del stack | `iniciar.sh`: "Stack de observabilidad detectado: trazas activadas" |
 | Reinicio automático | `taskkill /F` a Incentivos → el vigilante lo relanzó con PID nuevo y health 200 |
 | Apagado | tras `detener.sh`, 45 s sin ningún `java.exe` ni vigilante vivos |
+| `.pid` equivocado (25/11) | PID falso en `front.pid`: el vigilante lo corrigió al PID real sin reiniciar · PID falsos en front e Incentivos: `detener.sh` los detuvo igual, 9/9 puertos libres · servidor ajeno (`jwebserver`) en 8090: `detener.sh` no lo tocó, avisó y salió con 1 |
 | Sin verificar | `iniciar.ps1`, `detener.ps1` y `vigilante.ps1` (PowerShell) |
 
 ## 3. Rate limiting

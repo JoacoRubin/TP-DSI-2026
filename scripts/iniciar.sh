@@ -36,12 +36,12 @@ for linea in "${LISTA[@]}"; do
   iniciar_componente "$n" "$jar" >/dev/null
   # broker y autenticación primero: el resto depende de ellos al arrancar.
   if [[ "$n" == "broker" || "$n" == "autenticacion" ]]; then
-    if esperar_salud "$puerto" "$espera"; then echo "  $n OK"; else echo "  $n SIN RESPUESTA"; CAIDOS+=("$n"); fi
+    if esperar_salud "$puerto" "$espera"; then confirmar_pid "$n" "$puerto"; echo "  $n OK"; else echo "  $n SIN RESPUESTA"; CAIDOS+=("$n"); fi
   fi
 done
 for linea in "${LISTA[@]:2}"; do
   read -r n _ puerto espera <<<"$linea"
-  if esperar_salud "$puerto" "$espera"; then echo "  $n OK"; else echo "  $n SIN RESPUESTA"; CAIDOS+=("$n"); fi
+  if esperar_salud "$puerto" "$espera"; then confirmar_pid "$n" "$puerto"; echo "  $n OK"; else echo "  $n SIN RESPUESTA"; CAIDOS+=("$n"); fi
 done
 
 if (( VIGILANTE )); then
