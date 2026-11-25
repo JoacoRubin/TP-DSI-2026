@@ -102,6 +102,23 @@ class CasosDeUsoLogisticaTest {
                 .as("callback repetido es idempotente").isEmpty();
     }
 
+    @Test
+    void siFallaGuardarLasEntregasNoSeAnunciaNingunaPlanificacion() {
+        Entrega a = entrega(UUID.randomUUID());
+        entregas.guardar(a);
+        planificar().ejecutar();
+        UUID solicitudId = pedidos.get(0).solicitudId();
+        entregas.caida = true;
+
+        assertThatThrownBy(() -> callback().ejecutar(new RegistrarResultadoPlanificacion.Resultado(solicitudId,
+                List.of(new RegistrarResultadoPlanificacion.RutaPropuesta(camion.id(),
+                        List.of(new RegistrarResultadoPlanificacion.ParadaPropuesta(1, List.of(a.id()))))),
+                List.of()))).isInstanceOf(IllegalStateException.class);
+
+        assertThat(eventos.publicados).as("Donaciones no debe enterarse de algo que Logística no guardó").isEmpty();
+        assertThat(solicitudes.datos.get(solicitudId).pendiente()).as("el callback se puede reintentar").isTrue();
+    }
+
     private Ruta rutaPlanificada(Entrega e) {
         entregas.guardar(e);
         planificar().ejecutar();
@@ -169,7 +186,11 @@ class CasosDeUsoLogisticaTest {
         public List<Entrega> filtrar(EstadoEntrega e, UUID en, UUID d) { return List.copyOf(datos.values()); }
         public List<Entrega> entregadasDesde(Instant desde, int l) { return List.of(); }
         public void guardar(Entrega e) { datos.put(e.id(), e); }
-        public void guardarTodas(Collection<Entrega> es) { es.forEach(this::guardar); }
+        boolean caida;
+        public void guardarTodas(Collection<Entrega> es) {
+            if (caida) throw new IllegalStateException("Mongo no disponible");
+            es.forEach(this::guardar);
+        }
         public ar.utn.donatrack.logistica.entregas.domain.Pagina<Entrega> buscar(ar.utn.donatrack.logistica.entregas.domain.FiltroEntregas f, int n, int t) {
             List<Entrega> todas = datos.values().stream().filter(e -> f.estados().isEmpty() || f.estados().contains(e.estado())).toList();
             return new ar.utn.donatrack.logistica.entregas.domain.Pagina<>(todas.stream().skip((long) n * t).limit(t).toList(), todas.size(), n, t);

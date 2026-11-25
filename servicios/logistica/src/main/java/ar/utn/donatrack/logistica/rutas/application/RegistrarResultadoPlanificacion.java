@@ -69,6 +69,7 @@ public class RegistrarResultadoPlanificacion {
         Map<UUID, Entrega> delLote = entregas.buscarTodas(s.entregaIds()).stream()
                 .collect(Collectors.toMap(Entrega::id, Function.identity()));
         List<Ruta> generadas = new ArrayList<>();
+        List<EventosLogistica.EntregaPlanificada> planificadas = new ArrayList<>();
 
         for (RutaPropuesta rp : resultado.rutas() == null ? List.<RutaPropuesta>of() : resultado.rutas()) {
             Camion camion = camiones.buscar(rp.camionId()).orElse(null);
@@ -93,7 +94,7 @@ public class RegistrarResultadoPlanificacion {
             generadas.add(ruta);
             incluidas.forEach(e -> {
                 e.planificar(ruta.id(), camion, ahora);
-                eventos.publicar(new EventosLogistica.EntregaPlanificada(e.id(), e.donacionId(), ruta.id(), camion.patente(), ahora));
+                planificadas.add(new EventosLogistica.EntregaPlanificada(e.id(), e.donacionId(), ruta.id(), camion.patente(), ahora));
             });
         }
 
@@ -107,6 +108,9 @@ public class RegistrarResultadoPlanificacion {
         entregas.guardarTodas(delLote.values());
         s.completar(generadas.size(), sinAsignar, ahora);
         solicitudes.guardar(s);
+        // Recién ahora, con todo guardado: si algo de lo anterior falla, Donaciones no se entera de una
+        // planificación que Logística no tiene, y el callback (solicitud aún pendiente) se puede reintentar.
+        planificadas.forEach(eventos::publicar);
         return generadas;
     }
 }
