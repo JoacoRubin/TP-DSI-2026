@@ -14,8 +14,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
+import java.net.http.HttpClient;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -47,12 +50,21 @@ class PlanificacionesController {
 class ProcesadorAsincronico {
 
     private static final Logger log = LoggerFactory.getLogger(ProcesadorAsincronico.class);
+    static final Duration CONEXION_CALLBACK = Duration.ofSeconds(3);
+    static final Duration LECTURA_CALLBACK = Duration.ofSeconds(10);
     private final RestClient cliente;
     private final long demoraMs;
 
+    /**
+     * Con timeouts: el callback corre en el pool de @Async; sin ellos, un receptor que no contesta deja
+     * el hilo colgado para siempre y, cuando se agota el pool, el proveedor deja de planificar.
+     */
     ProcesadorAsincronico(@Value("${planificador.demora-ms:2000}") long demoraMs, RestClient.Builder clientes) {
         this.demoraMs = demoraMs;
-        this.cliente = clientes.build(); // builder de Spring: ya instrumentado para trazas
+        JdkClientHttpRequestFactory fabrica = new JdkClientHttpRequestFactory(
+                HttpClient.newBuilder().connectTimeout(CONEXION_CALLBACK).build());
+        fabrica.setReadTimeout(LECTURA_CALLBACK);
+        this.cliente = clientes.requestFactory(fabrica).build(); // builder de Spring: ya instrumentado para trazas
     }
 
     record Callback(UUID solicitudId, List<Algoritmo.Ruta> rutas, List<UUID> sinAsignar) {
