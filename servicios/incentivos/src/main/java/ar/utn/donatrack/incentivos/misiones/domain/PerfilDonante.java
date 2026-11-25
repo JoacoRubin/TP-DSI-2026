@@ -42,10 +42,15 @@ public class PerfilDonante {
         this.creadoEn = creadoEn;
     }
 
+    /**
+     * Las insignias nacen visibles SÓLO si el donante consintió su difusión al registrarse (Ley 25.326,
+     * opt-in). Después lo cambia él desde su panel ({@link #configurarVisibilidad}).
+     */
     public static PerfilDonante nuevo(UUID donanteId, String nombre, String email, String telefono, String whatsapp,
-                                      MedioNotificacion medio, boolean personaHumana, Instant ahora) {
+                                      MedioNotificacion medio, boolean personaHumana, boolean aceptaDifusionLogros,
+                                      Instant ahora) {
         return new PerfilDonante(donanteId, nombre, email, telefono, whatsapp, medio, personaHumana,
-                CategoriaDonante.COLABORADOR, 0, true, ahora);
+                CategoriaDonante.COLABORADOR, 0, aceptaDifusionLogros, ahora);
     }
 
     public void actualizarContacto(String nombre, String email, String telefono, String whatsapp, MedioNotificacion medio) {

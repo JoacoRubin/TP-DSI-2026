@@ -30,7 +30,7 @@ public class ProcesarDonacionRegistrada {
         }
         EventosDonaciones.DonanteResumen d = e.donante();
         PerfilDonante perfil = perfiles.buscar(d.id()).orElseGet(() -> PerfilDonante.nuevo(d.id(), d.nombre(), d.email(),
-                d.telefono(), d.whatsapp(), d.medioPreferido(), d.personaHumana(), reloj.instant()));
+                d.telefono(), d.whatsapp(), d.medioPreferido(), d.personaHumana(), d.aceptaDifusionLogros(), reloj.instant()));
         perfil.actualizarContacto(d.nombre(), d.email(), d.telefono(), d.whatsapp(), d.medioPreferido());
         actividades.guardar(ActividadDonacion.registrada(e.donacionId(), d.id(), e.cargaId(), e.categoria(),
                 e.subcategoria(), e.cantidad(), e.registradaEn()));

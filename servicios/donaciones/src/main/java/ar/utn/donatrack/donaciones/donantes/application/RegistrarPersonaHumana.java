@@ -18,8 +18,9 @@ import java.util.UUID;
  */
 public class RegistrarPersonaHumana {
 
+    /** {@code aceptaDifusionLogros}: consentimiento de la propia persona (Ley 25.326); en el alta por terceros, false. */
     public record Comando(String nombre, String apellido, Integer edad, Documento documento, Genero genero,
-                          Direccion direccion, MediosContacto contacto, String clave) {
+                          Direccion direccion, MediosContacto contacto, String clave, boolean aceptaDifusionLogros) {
     }
 
     private final DonanteRepositorio donantes;
@@ -38,6 +39,7 @@ public class RegistrarPersonaHumana {
         }
         PersonaHumana persona = PersonaHumana.registrar(UUID.randomUUID(), c.nombre(), c.apellido(), c.edad(),
                 c.documento(), c.genero(), c.direccion(), c.contacto(), reloj.instant());
+        persona.aceptarDifusionLogros(c.aceptaDifusionLogros());
         donantes.guardar(persona);
         altaDeCuenta.crear(persona.comoDestinatario(), "DONANTE", "HUMANA", persona.id().toString(), c.clave());
         return persona;

@@ -36,7 +36,7 @@ class DominioIncentivosTest {
     }
 
     private PerfilDonante perfil() {
-        return PerfilDonante.nuevo(donante, "Ana", "ana@mail.com", null, null, MedioNotificacion.EMAIL, true, AHORA);
+        return PerfilDonante.nuevo(donante, "Ana", "ana@mail.com", null, null, MedioNotificacion.EMAIL, true, false, AHORA);
     }
 
     @Test

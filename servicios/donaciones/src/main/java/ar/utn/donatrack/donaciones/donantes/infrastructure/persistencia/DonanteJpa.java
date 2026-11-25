@@ -85,6 +85,8 @@ public class DonanteJpa {
     private Integer edad;
     @Enumerated(EnumType.STRING)
     private Genero genero;
+    /** Boolean (no boolean): con ddl-auto=update la columna se agrega nullable y las filas previas quedan en NULL = no. */
+    private Boolean aceptaDifusionLogros;
     // Persona jurídica
     private String razonSocial;
     @Enumerated(EnumType.STRING)
@@ -122,6 +124,7 @@ public class DonanteJpa {
             j.apellido = h.apellido();
             j.edad = h.edad();
             j.genero = h.genero();
+            j.aceptaDifusionLogros = h.aceptaDifusionLogros();
         } else if (d instanceof PersonaJuridica p) {
             j.razonSocial = p.razonSocial();
             j.tipoOrganizacion = p.tipoOrganizacion();
@@ -138,7 +141,7 @@ public class DonanteJpa {
         if (tipo == TipoDonante.HUMANA) {
             return new PersonaHumana(id, nombre, apellido, edad, documento, genero,
                     direccion == null ? null : direccion.aDominio(), contacto, activo, fechaAlta, ultimaInteraccion,
-                    ultimoAvisoInactividad);
+                    ultimoAvisoInactividad, Boolean.TRUE.equals(aceptaDifusionLogros));
         }
         return new PersonaJuridica(id, razonSocial, tipoOrganizacion, rubro, documento,
                 direccion == null ? null : direccion.aDominio(), contacto,

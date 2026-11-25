@@ -54,9 +54,9 @@ class SembradorDatosDemo implements ApplicationRunner {
             return;
         }
         sembrar(PerfilDonante.nuevo(DONANTE_ANA, "Ana Pérez", DONANTE_ANA_EMAIL, "+54 11 5555-5555", "+54 9 11 5555-5555",
-                MedioNotificacion.EMAIL, true, reloj.instant()));
+                MedioNotificacion.EMAIL, true, true, reloj.instant())); // consintió la difusión (ver Donaciones)
         sembrar(PerfilDonante.nuevo(DONANTE_ARCOS, "Arcos Plateados S.A.", DONANTE_ARCOS_EMAIL, "+54 11 4444-4444", null,
-                MedioNotificacion.EMAIL, false, reloj.instant()));
+                MedioNotificacion.EMAIL, false, false, reloj.instant()));
         rankings.generar(YearMonth.now(reloj).minusMonths(1));
         log.info("Datos demo de incentivos sembrados");
     }

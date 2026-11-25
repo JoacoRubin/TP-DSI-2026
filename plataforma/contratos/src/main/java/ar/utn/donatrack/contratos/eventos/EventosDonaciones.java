@@ -11,9 +11,14 @@ public final class EventosDonaciones {
     private EventosDonaciones() {
     }
 
-    /** Snapshot del donante: Incentivos lo desnormaliza para no consultar a Donaciones. */
+    /**
+     * Snapshot del donante: Incentivos lo desnormaliza para no consultar a Donaciones.
+     * {@code aceptaDifusionLogros}: consentimiento dado en el alta (Ley 25.326) para difundir sus logros en
+     * redes. Sólo define el perfil NUEVO en Incentivos; después decide el donante desde su panel. Un mensaje
+     * anterior a este campo llega sin él y se lee como {@code false}: sin consentimiento, no se difunde.
+     */
     public record DonanteResumen(UUID id, String nombre, String email, String telefono, String whatsapp,
-                                 MedioNotificacion medioPreferido, boolean personaHumana) {
+                                 MedioNotificacion medioPreferido, boolean personaHumana, boolean aceptaDifusionLogros) {
     }
 
     public record DonacionRegistrada(UUID donacionId, UUID cargaId, DonanteResumen donante,

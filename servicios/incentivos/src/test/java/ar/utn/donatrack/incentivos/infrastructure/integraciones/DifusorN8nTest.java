@@ -51,7 +51,7 @@ class DifusorN8nTest {
 
     private static PerfilDonante lucia() {
         return PerfilDonante.nuevo(UUID.randomUUID(), "Lucía Gómez", "lucia@donatrack.org", null, null,
-                MedioNotificacion.EMAIL, true, Instant.now());
+                MedioNotificacion.EMAIL, true, true, Instant.now());
     }
 
     private static InsigniaObtenida primerPaso(PerfilDonante p) {

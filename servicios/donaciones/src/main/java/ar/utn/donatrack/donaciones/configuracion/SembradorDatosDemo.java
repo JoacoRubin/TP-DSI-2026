@@ -100,9 +100,11 @@ class SembradorDatosDemo implements ApplicationRunner {
         Catalogo c = catalogo.catalogo();
 
         Direccion utn = new Direccion("Medrano", "951", "CABA", "Buenos Aires", "C1179AAQ", new Coordenadas(-34.5986, -58.4202));
-        donantes.guardar(PersonaHumana.registrar(DONANTE_ANA, "Ana", "Pérez", 34, new Documento(TipoDocumento.DNI, "30123456"),
+        PersonaHumana ana = PersonaHumana.registrar(DONANTE_ANA, "Ana", "Pérez", 34, new Documento(TipoDocumento.DNI, "30123456"),
                 Genero.FEMENINO, utn, new MediosContacto(DONANTE_ANA_EMAIL, "+54 11 5555-5555", "+54 9 11 5555-5555",
-                        MedioNotificacion.EMAIL), ahora.minus(Duration.ofDays(120))));
+                        MedioNotificacion.EMAIL), ahora.minus(Duration.ofDays(120)));
+        ana.aceptarDifusionLogros(true); // la donante de la demo se registró aceptando la difusión (la usa n8n)
+        donantes.guardar(ana);
         donantes.guardar(PersonaJuridica.registrar(DONANTE_ARCOS, "Arcos Plateados S.A.", TipoPersonaJuridica.EMPRESA,
                 "Gastronomía", new Documento(TipoDocumento.CUIT, "30-71234567-8"),
                 new Direccion("Av. Corrientes", "3200", "CABA", "Buenos Aires", "C1193AAF", new Coordenadas(-34.6045, -58.4108)),

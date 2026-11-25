@@ -72,10 +72,21 @@ class DonantesController {
     record PersonaHumanaRequest(@NotBlank String nombre, @NotBlank String apellido, @NotNull Integer edad,
                                 @NotNull TipoDocumento tipoDocumento, @NotBlank String numeroDocumento,
                                 @NotNull Genero genero, @Valid @NotNull DireccionDto direccion,
-                                @Valid @NotNull ContactoDto contacto, String clave) {
-        RegistrarPersonaHumana.Comando aComando(String claveEfectiva) {
+                                @Valid @NotNull ContactoDto contacto, String clave, Boolean aceptaDifusionLogros) {
+
+        /** La persona se registra sola: vale su clave y su consentimiento (ausente = no). */
+        RegistrarPersonaHumana.Comando comandoAutorregistro() {
+            return aComando(clave, Boolean.TRUE.equals(aceptaDifusionLogros));
+        }
+
+        /** Alta en el depósito: sin clave (recibe enlace de activación) y sin consentimiento de terceros. */
+        RegistrarPersonaHumana.Comando comandoAdministracion() {
+            return aComando(null, false);
+        }
+
+        private RegistrarPersonaHumana.Comando aComando(String claveEfectiva, boolean aceptaDifusion) {
             return new RegistrarPersonaHumana.Comando(nombre, apellido, edad, new Documento(tipoDocumento, numeroDocumento),
-                    genero, direccion.aDominio(), contacto.aDominio(), claveEfectiva);
+                    genero, direccion.aDominio(), contacto.aDominio(), claveEfectiva, aceptaDifusion);
         }
     }
 
@@ -121,7 +132,7 @@ class DonantesController {
     @ResponseStatus(HttpStatus.CREATED)
     @Transactional
     DonanteVista registrarHumana(@Valid @RequestBody PersonaHumanaRequest req) {
-        return DonanteVista.de(registrarHumana.ejecutar(req.aComando(null)));
+        return DonanteVista.de(registrarHumana.ejecutar(req.comandoAdministracion()));
     }
 
     @PostMapping("/api/donantes/juridicas")
@@ -138,7 +149,7 @@ class DonantesController {
     @Transactional
     DonanteVista autorregistroHumana(@Valid @RequestBody PersonaHumanaRequest req) {
         exigirClave(req.clave());
-        return DonanteVista.de(registrarHumana.ejecutar(req.aComando(req.clave())));
+        return DonanteVista.de(registrarHumana.ejecutar(req.comandoAutorregistro()));
     }
 
     @PostMapping("/api/registro/donantes/juridicas")
