@@ -1,7 +1,11 @@
 package ar.utn.donatrack.donaciones.compartido.infrastructure.outbox;
 
+import ar.utn.donatrack.contratos.Colas;
+import ar.utn.donatrack.contratos.notificaciones.Destinatario;
+import ar.utn.donatrack.contratos.notificaciones.SolicitudNotificacion;
 import ar.utn.donatrack.donaciones.compartido.application.ServicioLogistica;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,13 +38,36 @@ class OutboxTransaccionalJpaTest {
     PlatformTransactionManager tm;
 
     ServicioLogistica puerto;
+    PublicadorColasConOutbox colas;
     TransactionTemplate tx;
 
     @BeforeEach
     void preparar() {
         jpa.deleteAll();
         puerto = new ServicioLogisticaConOutbox(bandeja, new ObjectMapper(), Clock.systemUTC());
+        colas = new PublicadorColasConOutbox(bandeja, JsonMapper.builder().findAndAddModules().build(), Clock.systemUTC());
         tx = new TransactionTemplate(tm);
+    }
+
+    @Test
+    void siLaTransaccionHaceRollbackLaNotificacionNoSale() {
+        assertThatThrownBy(() -> tx.executeWithoutResult(s -> {
+            colas.publicar(Colas.NOTIFICACIONES, SolicitudNotificacion.de(Destinatario.porEmail("Ana", "ana@donatrack.org"),
+                    "Recibimos tu donación", "Gracias", "DONACION_REGISTRADA", "donaciones"));
+            throw new IllegalStateException("falla posterior del caso de uso");
+        })).isInstanceOf(IllegalStateException.class);
+
+        assertThat(bandeja.pendientes(10)).isEmpty();
+    }
+
+    @Test
+    void siLaTransaccionConfirmaLaNotificacionQuedaPendiente() {
+        tx.executeWithoutResult(s -> colas.publicar(Colas.NOTIFICACIONES, SolicitudNotificacion.de(
+                Destinatario.porEmail("Ana", "ana@donatrack.org"), "Recibimos tu donación", "Gracias",
+                "DONACION_REGISTRADA", "donaciones")));
+
+        assertThat(bandeja.pendientes(10)).singleElement()
+                .satisfies(m -> assertThat(m.tipo()).isEqualTo("JMS:notificacion.solicitada"));
     }
 
     @Test

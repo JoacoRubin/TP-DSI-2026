@@ -31,6 +31,7 @@ import ar.utn.donatrack.donaciones.compartido.infrastructure.integraciones.Servi
 import ar.utn.donatrack.donaciones.compartido.infrastructure.integraciones.ServicioLogisticaRest;
 import ar.utn.donatrack.donaciones.compartido.infrastructure.outbox.BandejaSalida;
 import ar.utn.donatrack.donaciones.compartido.infrastructure.outbox.DespachadorOutbox;
+import ar.utn.donatrack.donaciones.compartido.infrastructure.outbox.PublicadorColasConOutbox;
 import ar.utn.donatrack.donaciones.compartido.infrastructure.outbox.ServicioLogisticaConOutbox;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.observation.ObservationRegistry;
@@ -59,6 +60,7 @@ import ar.utn.donatrack.donaciones.importacion.application.IniciarImportacion;
 import ar.utn.donatrack.donaciones.importacion.application.ProcesarImportacion;
 import ar.utn.donatrack.donaciones.importacion.application.RecuperarImportacionesInterrumpidas;
 import ar.utn.donatrack.donaciones.importacion.domain.ImportacionRepositorio;
+import ar.utn.donatrack.soporte.mensajeria.PublicadorMensajes;
 import ar.utn.donatrack.soporte.seguridad.TokenServicioProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -104,11 +106,18 @@ public class ConfiguracionCasosDeUso {
         return new ServicioLogisticaConOutbox(bandeja, json, reloj);
     }
 
+    /** Notificaciones y eventos a Incentivos: también pasan por el outbox (nada se publica dentro de la transacción). */
+    @Bean
+    PublicadorColasConOutbox publicadorColas(BandejaSalida bandeja, ObjectMapper json, Clock reloj) {
+        return new PublicadorColasConOutbox(bandeja, json, reloj);
+    }
+
     @Bean
     DespachadorOutbox despachadorOutbox(BandejaSalida bandeja, ObjectMapper json, Clock reloj,
                                         PropiedadesDonaciones p, TokenServicioProvider tokens,
-                                        ObservationRegistry observaciones) {
-        return new DespachadorOutbox(bandeja, new ServicioLogisticaRest(cliente(p.urlLogistica(), tokens, observaciones)), json, reloj);
+                                        ObservationRegistry observaciones, PublicadorMensajes broker) {
+        return new DespachadorOutbox(bandeja, new ServicioLogisticaRest(cliente(p.urlLogistica(), tokens, observaciones)),
+                broker, json, reloj);
     }
 
     @Bean

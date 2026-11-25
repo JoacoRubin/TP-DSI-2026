@@ -2,6 +2,7 @@ package ar.utn.donatrack.donaciones.compartido.infrastructure.outbox;
 
 import ar.utn.donatrack.contratos.errores.ReglaDeNegocioException;
 import ar.utn.donatrack.donaciones.compartido.application.ServicioLogistica;
+import ar.utn.donatrack.soporte.mensajeria.PublicadorMensajes;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,10 +13,11 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Entrega los mensajes pendientes al servicio real. Garantía: al menos una vez (Logística es
- * idempotente por donación). Orden: por clave; si un mensaje de una donación falla, los
- * siguientes de ESA donación esperan a la próxima pasada, el resto sigue avanzando.
- * Supone una única instancia de Donaciones despachando.
+ * Entrega los mensajes pendientes a su destino real: comandos REST a Logística y mensajes JMS
+ * (notificaciones, eventos a Incentivos). Garantía: al menos una vez (Logística es idempotente
+ * por donación, Notificaciones por id de solicitud e Incentivos por id de donación).
+ * Orden: por clave (donación o cola); si un mensaje falla, los siguientes de ESA clave esperan a
+ * la próxima pasada, el resto sigue avanzando. Supone una única instancia de Donaciones despachando.
  */
 public class DespachadorOutbox {
 
@@ -24,12 +26,15 @@ public class DespachadorOutbox {
 
     private final BandejaSalida bandeja;
     private final ServicioLogistica logistica;
+    private final PublicadorMensajes broker;
     private final ObjectMapper json;
     private final Clock reloj;
 
-    public DespachadorOutbox(BandejaSalida bandeja, ServicioLogistica logistica, ObjectMapper json, Clock reloj) {
+    public DespachadorOutbox(BandejaSalida bandeja, ServicioLogistica logistica, PublicadorMensajes broker,
+                             ObjectMapper json, Clock reloj) {
         this.bandeja = bandeja;
         this.logistica = logistica;
+        this.broker = broker;
         this.json = json;
         this.reloj = reloj;
     }
@@ -48,7 +53,7 @@ public class DespachadorOutbox {
                 enviados++;
             } catch (ReglaDeNegocioException e) {
                 m.registrarFallo(e.getMessage(), true);
-                log.error("Outbox: Logística rechazó {} #{} ({}); no se reintenta", m.tipo(), m.id(), e.getMessage());
+                log.error("Outbox: {} #{} rechazado ({}); no se reintenta", m.tipo(), m.id(), e.getMessage());
             } catch (RuntimeException e) {
                 bloqueadas.add(m.clave());
                 m.registrarFallo(e.getMessage(), false);
@@ -65,6 +70,14 @@ public class DespachadorOutbox {
 
     private void entregar(MensajeSaliente m) {
         try {
+            if (m.tipo().startsWith(PublicadorColasConOutbox.PREFIJO)) {
+                Class<?> clase = PublicadorColasConOutbox.claseDe(m.tipo());
+                if (clase == null) {
+                    throw new ReglaDeNegocioException("Tipo de mensaje JMS desconocido: " + m.tipo());
+                }
+                broker.publicar(m.clave(), json.readValue(m.payload(), clase));
+                return;
+            }
             switch (m.tipo()) {
                 case ServicioLogisticaConOutbox.SOLICITAR_ENTREGA ->
                         logistica.solicitarEntrega(json.readValue(m.payload(), ServicioLogistica.SolicitudEntrega.class));

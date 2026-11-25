@@ -26,7 +26,7 @@ class OutboxLogisticaTest {
     private final BandejaEnMemoria bandeja = new BandejaEnMemoria();
     private final LogisticaFalsa logistica = new LogisticaFalsa();
     private final ServicioLogistica puerto = new ServicioLogisticaConOutbox(bandeja, json, reloj);
-    private final DespachadorOutbox despachador = new DespachadorOutbox(bandeja, logistica, json, reloj);
+    private final DespachadorOutbox despachador = new DespachadorOutbox(bandeja, logistica, new OutboxColasTest.BrokerFalso(), json, reloj);
 
     private static ServicioLogistica.SolicitudEntrega solicitud(UUID donacionId) {
         return new ServicioLogistica.SolicitudEntrega(donacionId, UUID.randomUUID(), "Ana", UUID.randomUUID(),

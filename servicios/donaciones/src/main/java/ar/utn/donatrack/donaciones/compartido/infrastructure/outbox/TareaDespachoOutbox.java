@@ -23,7 +23,7 @@ class TareaDespachoOutbox {
         try {
             int enviados = despachador.despachar();
             if (enviados > 0) {
-                log.info("Outbox: {} mensajes entregados a Logística", enviados);
+                log.info("Outbox: {} mensajes entregados (Logística y colas)", enviados);
             }
         } catch (RuntimeException e) {
             log.error("Outbox: falló la pasada de despacho: {}", e.getMessage());
