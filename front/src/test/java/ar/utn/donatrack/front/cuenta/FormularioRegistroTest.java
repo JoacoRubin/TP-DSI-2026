@@ -84,6 +84,43 @@ class FormularioRegistroTest {
         assertThat(enviado.get("emails")).isEqualTo(List.of("escuela@x.org", "direccion@x.org"));
     }
 
+    private static MockHttpServletRequestBuilder registroDonanteHumano(String ip) {
+        return post("/registro/donante-humano").with(csrf()).with(r -> { r.setRemoteAddr(ip); return r; })
+                .param("nombre", "Lucía").param("apellido", "Gómez").param("edad", "28").param("email", "lucia@x.org")
+                .param("clave", "Segura123!").param("confirmacion", "Segura123!").param("terminos", "on");
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> cuerpoEnviadoAlRegistroHumano() {
+        ArgumentCaptor<Object> cuerpo = ArgumentCaptor.forClass(Object.class);
+        verify(donaciones).post(org.mockito.ArgumentMatchers.eq("/api/registro/donantes/humanas"), cuerpo.capture());
+        return (Map<String, Object>) cuerpo.getValue();
+    }
+
+    @Test
+    void laDifusionDeLogrosEsOptIn() throws Exception {
+        mvc.perform(registroDonanteHumano("198.51.100.32")).andExpect(status().isFound());
+
+        assertThat(cuerpoEnviadoAlRegistroHumano()).containsEntry("aceptaDifusionLogros", false);
+    }
+
+    @Test
+    void marcandoLaCasillaSeAceptaLaDifusion() throws Exception {
+        mvc.perform(registroDonanteHumano("198.51.100.33").param("difusionLogros", "on")).andExpect(status().isFound());
+
+        assertThat(cuerpoEnviadoAlRegistroHumano()).containsEntry("aceptaDifusionLogros", true);
+    }
+
+    @Test
+    void elFormularioOfreceLaCasillaDesmarcada() throws Exception {
+        String html = mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/registro/donante-humano"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+
+        assertThat(html).containsPattern("<input[^>]*name=\"difusionLogros\"")
+                .doesNotContainPattern("<input[^>]*name=\"difusionLogros\"[^>]*checked")
+                .doesNotContainPattern("<input[^>]*checked[^>]*name=\"difusionLogros\"");
+    }
+
     @Test
     void sinTokenCsrfElRegistroSeRechaza() throws Exception {
         mvc.perform(post("/registro/entidad").with(r -> { r.setRemoteAddr("198.51.100.31"); return r; })

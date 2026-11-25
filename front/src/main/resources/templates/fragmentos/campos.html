@@ -89,6 +89,13 @@
     <span>Leí y acepto los <a href="/legal" target="_blank" rel="noopener">términos y la política de privacidad</a>.</span>
 </label>
 
+<!-- Consentimiento opcional y separado (Ley 25.326): nunca viene marcado -->
+<label th:fragment="difusionLogros(form)" class="check">
+    <input type="checkbox" name="difusionLogros" th:checked="${form['difusionLogros'] != null}">
+    <span>Quiero que DonaTrack comparta públicamente mis logros (insignias) en redes sociales, con mi nombre.
+        <span class="chico suave">Es opcional y lo podés cambiar cuando quieras desde tu panel de incentivos.</span></span>
+</label>
+
 <!-- Datos de persona humana -->
 <fieldset th:fragment="personaHumana(form)">
     <legend>Datos personales</legend>

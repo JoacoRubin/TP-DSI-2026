@@ -81,7 +81,12 @@ class CuentaController {
         }
         try {
             switch (tipo) {
-                case "donante-humano" -> apis.donaciones().post("/api/registro/donantes/humanas", personaHumana(form, texto(form, "clave")));
+                case "donante-humano" -> {
+                    Map<String, Object> cuerpo = personaHumana(form, texto(form, "clave"));
+                    // Consentimiento propio y separado de los términos (Ley 25.326): casilla sin marcar = no.
+                    cuerpo.put("aceptaDifusionLogros", form.get("difusionLogros") != null);
+                    apis.donaciones().post("/api/registro/donantes/humanas", cuerpo);
+                }
                 case "donante-juridico" -> apis.donaciones().post("/api/registro/donantes/juridicas", personaJuridica(form, texto(form, "clave")));
                 case "entidad" -> apis.donaciones().post("/api/registro/entidades", entidad(form, texto(form, "clave")));
                 default -> {
