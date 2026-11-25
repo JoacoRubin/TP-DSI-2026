@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 class OutboxIncentivosTest {
 
-    private final Clock reloj = Clock.fixed(Instant.parse("2026-11-25T12:00:00Z"), ZoneOffset.UTC);
+    private final BackoffOutboxTest.RelojAjustable reloj = new BackoffOutboxTest.RelojAjustable(Instant.parse("2026-11-25T12:00:00Z"));
     private final ObjectMapper json = JsonMapper.builder().findAndAddModules().build();
     private final BandejaEnMemoria bandeja = new BandejaEnMemoria();
     private final BrokerFalso broker = new BrokerFalso();
@@ -69,6 +69,7 @@ class OutboxIncentivosTest {
         assertThat(bandeja.mensajes.get(0).intentos()).isEqualTo(1);
 
         broker.caido = false;
+        reloj.avanzar(MensajeSaliente.ESPERA_MAXIMA);
         assertThat(despachador.despachar()).isEqualTo(2);
         assertThat(broker.publicados).extracting(Publicado::mensaje).containsExactly(mision, categoria);
     }
@@ -80,6 +81,7 @@ class OutboxIncentivosTest {
 
         for (int i = 0; i < MensajeSaliente.MAX_INTENTOS; i++) {
             despachador.despachar();
+            reloj.avanzar(MensajeSaliente.ESPERA_MAXIMA);
         }
 
         assertThat(bandeja.mensajes.get(0).estado()).isEqualTo(EstadoMensaje.FALLIDO);

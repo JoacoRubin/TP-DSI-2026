@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 class OutboxColasTest {
 
-    private final Clock reloj = Clock.fixed(Instant.parse("2026-11-25T12:00:00Z"), ZoneOffset.UTC);
+    private final BackoffOutboxTest.RelojAjustable reloj = new BackoffOutboxTest.RelojAjustable(Instant.parse("2026-11-25T12:00:00Z"));
     private final ObjectMapper json = JsonMapper.builder().findAndAddModules().build();
     private final OutboxLogisticaTest.BandejaEnMemoria bandeja = new OutboxLogisticaTest.BandejaEnMemoria();
     private final BrokerFalso broker = new BrokerFalso();
@@ -33,7 +33,7 @@ class OutboxColasTest {
     private final DespachadorOutbox despachador =
             new DespachadorOutbox(bandeja, new OutboxLogisticaTest.LogisticaFalsa(), broker, json, reloj);
 
-    private static SolicitudNotificacion notificacion(String asunto) {
+    static SolicitudNotificacion notificacion(String asunto) {
         return SolicitudNotificacion.de(new Destinatario("Ana", "ana@donatrack.org", null, null, null),
                 asunto, "Gracias por tu donación", "DONACION_REGISTRADA", "donaciones");
     }
@@ -78,6 +78,7 @@ class OutboxColasTest {
         assertThat(bandeja.mensajes).allMatch(m -> m.estado() == EstadoMensaje.PENDIENTE);
 
         broker.caido = false;
+        reloj.avanzar(MensajeSaliente.ESPERA_MAXIMA);
         assertThat(despachador.despachar()).isEqualTo(2);
         assertThat(broker.publicados).extracting(Publicado::mensaje).containsExactly(primera, segunda);
     }

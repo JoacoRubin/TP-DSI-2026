@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -43,24 +44,32 @@ public class DespachadorOutbox {
     public int despachar() {
         Set<String> bloqueadas = new HashSet<>();
         int enviados = 0;
+        Instant ahora = reloj.instant();
         for (MensajeSaliente m : bandeja.pendientes(LOTE)) {
             if (bloqueadas.contains(m.clave())) {
                 continue;
             }
+            // En espera de su reintento: bloquea su clave para que nadie de la misma clave se le adelante.
+            // Por eso el filtro va acá y no en la consulta (que salteándolo dejaría pasar al siguiente).
+            if (m.enEspera(ahora)) {
+                bloqueadas.add(m.clave());
+                continue;
+            }
             try {
                 entregar(m);
-                m.marcarEnviado(reloj.instant());
+                m.marcarEnviado(ahora);
                 enviados++;
             } catch (ReglaDeNegocioException e) {
-                m.registrarFallo(e.getMessage(), true);
+                m.registrarFallo(e.getMessage(), true, ahora);
                 log.error("Outbox: {} #{} rechazado ({}); no se reintenta", m.tipo(), m.id(), e.getMessage());
             } catch (RuntimeException e) {
                 bloqueadas.add(m.clave());
-                m.registrarFallo(e.getMessage(), false);
+                m.registrarFallo(e.getMessage(), false, ahora);
                 if (m.estado() == EstadoMensaje.FALLIDO) {
                     log.error("Outbox: {} #{} agotó {} intentos: {}", m.tipo(), m.id(), MensajeSaliente.MAX_INTENTOS, e.getMessage());
                 } else {
-                    log.warn("Outbox: {} #{} falló (intento {}), se reintenta: {}", m.tipo(), m.id(), m.intentos(), e.getMessage());
+                    log.warn("Outbox: {} #{} falló (intento {}), se reintenta a las {}: {}", m.tipo(), m.id(), m.intentos(),
+                            m.proximoIntento(), e.getMessage());
                 }
             }
             bandeja.guardar(m);

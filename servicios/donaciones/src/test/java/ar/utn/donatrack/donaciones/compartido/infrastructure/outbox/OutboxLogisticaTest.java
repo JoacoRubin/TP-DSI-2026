@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class OutboxLogisticaTest {
 
-    private final Clock reloj = Clock.fixed(Instant.parse("2026-11-24T12:00:00Z"), ZoneOffset.UTC);
+    private final BackoffOutboxTest.RelojAjustable reloj = new BackoffOutboxTest.RelojAjustable(Instant.parse("2026-11-24T12:00:00Z"));
     private final ObjectMapper json = new ObjectMapper();
     private final BandejaEnMemoria bandeja = new BandejaEnMemoria();
     private final LogisticaFalsa logistica = new LogisticaFalsa();
@@ -60,6 +60,7 @@ class OutboxLogisticaTest {
         assertThat(bandeja.mensajes.get(0).intentos()).isEqualTo(1);
 
         logistica.caida = false;
+        reloj.avanzar(MensajeSaliente.ESPERA_MAXIMA);
         assertThat(despachador.despachar()).isEqualTo(1);
         assertThat(logistica.solicitadas).containsExactly(s);
     }
@@ -78,6 +79,7 @@ class OutboxLogisticaTest {
         assertThat(logistica.canceladas).containsExactly(libre);
 
         logistica.fallarPara = null;
+        reloj.avanzar(MensajeSaliente.ESPERA_MAXIMA);
         despachador.despachar();
         assertThat(logistica.solicitadas).extracting(ServicioLogistica.SolicitudEntrega::donacionId).containsExactly(bloqueada);
         assertThat(logistica.canceladas).containsExactly(libre, bloqueada);
@@ -103,6 +105,7 @@ class OutboxLogisticaTest {
 
         for (int i = 0; i < MensajeSaliente.MAX_INTENTOS; i++) {
             despachador.despachar();
+            reloj.avanzar(MensajeSaliente.ESPERA_MAXIMA);
         }
 
         assertThat(bandeja.mensajes.get(0).estado()).isEqualTo(EstadoMensaje.FALLIDO);
