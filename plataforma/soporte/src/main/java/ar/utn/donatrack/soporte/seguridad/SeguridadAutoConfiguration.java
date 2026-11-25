@@ -7,8 +7,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
+import java.net.http.HttpClient;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 
@@ -33,10 +36,21 @@ public class SeguridadAutoConfiguration {
         return conversor;
     }
 
+    static final Duration CONEXION_AUTENTICACION = Duration.ofSeconds(2);
+    static final Duration LECTURA_AUTENTICACION = Duration.ofSeconds(5);
+
+    /**
+     * Con timeouts: el token se pide dentro de un método synchronized, desde el interceptor de TODAS las
+     * llamadas servicio→servicio. Si Autenticación se cuelga sin timeout, se traba cada hilo que llama afuera.
+     */
     @Bean
     @ConditionalOnProperty(prefix = "donatrack.seguridad.cliente", name = "id")
     public TokenServicioProvider tokenServicioProvider(PropiedadesClienteServicio propiedades) {
-        return new TokenServicioProvider(RestClient.builder().baseUrl(propiedades.authUrl()).build(), propiedades);
+        JdkClientHttpRequestFactory fabrica = new JdkClientHttpRequestFactory(
+                HttpClient.newBuilder().connectTimeout(CONEXION_AUTENTICACION).build());
+        fabrica.setReadTimeout(LECTURA_AUTENTICACION);
+        RestClient cliente = RestClient.builder().baseUrl(propiedades.authUrl()).requestFactory(fabrica).build();
+        return new TokenServicioProvider(cliente, propiedades);
     }
 
     @Bean
