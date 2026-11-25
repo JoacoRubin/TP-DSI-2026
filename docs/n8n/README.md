@@ -44,8 +44,11 @@ y [`ejemplo-post-insignia.json`](ejemplo-post-insignia.json).
 4. Arrancar DonaTrack con el webhook configurado:
    * PowerShell: `$env:N8N_WEBHOOK_URL = "http://localhost:5678/webhook/donatrack-insignia"; .\scripts\iniciar.ps1`
    * Bash: `N8N_WEBHOOK_URL=http://localhost:5678/webhook/donatrack-insignia ./scripts/iniciar.sh`
-5. Hacer que un donante complete una misión (p. ej. registrar su primera donación) → en
-   `data/n8n/publicaciones/` aparecen la tarjeta PNG y el post JSON. La ejecución también se ve en n8n (*Executions*).
+5. Hacer que un donante **que aceptó la difusión** complete una misión → en `data/n8n/publicaciones/`
+   aparecen la tarjeta PNG y el post JSON. La ejecución también se ve en n8n (*Executions*).
+   La difusión es opt-in (Ley 25.326): registrá una persona donante nueva **marcando** "Quiero que DonaTrack
+   comparta públicamente mis logros" y cargale su primera donación ("Primer paso"). Ana, la donante demo, ya
+   viene con la difusión aceptada. Sin consentimiento la insignia se otorga y se le notifica, pero no se difunde.
 
 Prueba directa sin DonaTrack. El cuerpo va en un **archivo UTF-8**: en Windows, un JSON pasado como
 argumento de `curl` se convierte a la página de códigos ANSI y la tarjeta sale con "donaci□n" y "P□rez"

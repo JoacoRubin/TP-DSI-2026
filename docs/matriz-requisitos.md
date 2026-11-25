@@ -33,7 +33,7 @@ parcial · ❌ no implementado (decisión explícita, ver
 | 3 | Asignación asincrónica de donaciones en depósito | `TareasProgramadas` (cron 03:00) + `POST` a demanda que responde 202 | `MotorMatchmakingTest`, `AlgoritmosMatchmakingTest` (fórmulas); la ejecución asincrónica se verifica a mano | 🟡 |
 | 4 | Gestión de incentivos | servicio `incentivos` (misiones, insignias, racha, ranking) | `DominioIncentivosTest` (8 casos); capturas 07 y 14 | ✅ |
 | 5 | Operaciones vía API REST | controladores `*Controller` de cada servicio | `DonacionesApiIntegracionTest` (401, 403, 422 y 400 incluidos) | ✅ |
-| 6 | Automatización de publicación de insignias | flujo n8n `docs/n8n/difusion-insignias.json`, `DifusorN8n` | `DifusorN8nTest`, `TextoDifusionTest`; **probado de punta a punta**: una donante nueva registra su primera donación → Incentivos le otorga "Primer paso" → n8n genera la tarjeta PNG y el post con mención ([ejemplo](n8n/ejemplo-tarjeta-insignia.png)). **No se publica en redes** (decisión del equipo) | ✅ |
+| 6 | Automatización de publicación de insignias | flujo n8n `docs/n8n/difusion-insignias.json`, `DifusorN8n` | `DifusorN8nTest`, `TextoDifusionTest`; **probado de punta a punta**: una donante nueva registra su primera donación → Incentivos le otorga "Primer paso" → n8n genera la tarjeta PNG y el post con mención ([ejemplo](n8n/ejemplo-tarjeta-insignia.png)). **No se publica en redes** (decisión del equipo). Difusión **opt-in** (Ley 25.326): sólo si la donante lo aceptó al registrarse o lo activó en su panel — `ProcesarDonacionRegistradaTest`, `ConsentimientoDifusionTest`, `ConsentimientoDifusionJpaTest`, `ResumenDonanteTest`, `PersonaHumanaRequestTest`, `FormularioRegistroTest` | ✅ |
 
 ## Entrega 3: Arquitectura y modelado en objetos (III)
 

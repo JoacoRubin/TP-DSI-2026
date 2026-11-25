@@ -155,7 +155,7 @@ sequenceDiagram
 * **Servicio↔servicio**: *client credentials* (`/api/auth/token-servicio`) con rol `SERVICIO`.
 * **Callback del planificador**: secreto compartido en `X-Callback-Token` (comparación en tiempo constante).
 * **Contraseñas**: BCrypt. **Tokens de activación**: 256 bits aleatorios, se guarda sólo su SHA-256, un solo uso, vencen a los 7 días.
-* **Privacidad (Ley 25.326)**: las vistas públicas no exponen donantes; el seguimiento filtra las paradas que no le corresponden a quien mira.
+* **Privacidad (Ley 25.326)**: las vistas públicas no exponen donantes; el seguimiento filtra las paradas que no le corresponden a quien mira. La difusión de logros en redes es **opt-in**: una casilla propia (desmarcada y separada de los términos) en el autorregistro de la persona humana. El consentimiento queda guardado en Donaciones, viaja en `DonacionRegistrada` y define el perfil nuevo en Incentivos; después el donante lo cambia desde su panel. Un alta hecha por terceros (administración, CSV) nunca lo otorga.
 
 ## 7. Camino de evolución (Entrega 6)
 

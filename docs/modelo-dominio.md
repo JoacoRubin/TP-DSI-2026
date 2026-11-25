@@ -29,8 +29,10 @@ class PersonaHumana {
   String apellido
   Integer edad
   Genero genero
+  boolean aceptaDifusionLogros
   +registrar(...)$ PersonaHumana
   +importada(...)$ PersonaHumana
+  +aceptarDifusionLogros(boolean)
 }
 class PersonaJuridica {
   String razonSocial
@@ -373,6 +375,7 @@ erDiagram
         varchar apellido "sólo HUMANA"
         int edad "sólo HUMANA"
         varchar genero "sólo HUMANA"
+        boolean acepta_difusion_logros "sólo HUMANA; opt-in, NULL = no"
         varchar razon_social "sólo JURIDICA"
         varchar tipo_organizacion "sólo JURIDICA"
         varchar rubro "sólo JURIDICA"
