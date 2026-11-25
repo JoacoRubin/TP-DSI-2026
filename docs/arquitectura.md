@@ -126,6 +126,7 @@ Nadie hace JOIN contra la base de otro. Las copias desnormalizadas se justifican
 
 * **Contratos** en el módulo `plataforma/contratos` (Java puro). El tipo viaja como identificador lógico (`_tipo=ruta.iniciada`), no como nombre de clase.
 * **Entrega "al menos una vez"** + **consumidores idempotentes** (cada caso de uso verifica el estado antes de transicionar; Notificaciones usa el id del mensaje).
+* **Transactional Outbox en Incentivos** (su propia tabla `outbox_mensajes`, en su base): los avisos de misión cumplida y de nueva categoría se registran en la misma transacción que otorga la insignia (`PublicadorColasConOutbox`) y `DespachadorOutbox` los publica cada 3 s, con el mismo formato y reintentos que en Donaciones. Se replicó el código en vez de compartirlo: cada servicio es dueño de su tabla, y una librería JPA común acoplaría a servicios que no usan JPA (Logística usa Mongo).
 * **Transactional Outbox en Donaciones** (tabla `outbox_mensajes`), para todo lo que sale del servicio como efecto de un caso de uso:
   * **Comandos a Logística**: `solicitarEntrega` / `cancelarEntrega` no llaman por HTTP dentro de la transacción (`ServicioLogisticaConOutbox`).
   * **Mensajes JMS**: las `SolicitudNotificacion` y los eventos a Incentivos (`DonacionRegistrada`, `DonacionEntregada`) no se publican en el broker dentro de la transacción (`PublicadorColasConOutbox`); se guardan como `JMS:<tipo lógico>` con la cola como clave.
@@ -172,4 +173,4 @@ sequenceDiagram
 | Rate limiting | **Implementado** en el BFF (front): Bucket4j por IP, 3 políticas, 429 + `Retry-After` | Bucket distribuido (Redis) o en el API Gateway si hay varias instancias |
 | gRPC / GraphQL | **Implementado**: GraphQL en Logística (`/graphql`, rol ADMIN): filtros combinables + selección de campos + paginación | Consumirlo desde el dashboard de monitoreo del front |
 | Microservicios (bonus) | Servicios independientes ya desplegables por separado | Spring Cloud Gateway + Eureka/Consul; el front pasaría a hablar sólo con el gateway |
-| Outbox (bonus) | **Implementado** en Donaciones para comandos a Logística, notificaciones y eventos a Incentivos (`outbox_mensajes` + `DespachadorOutbox`) | Llevarlo a Incentivos (hoy sus notificaciones son post-commit) y despachar con `SELECT ... FOR UPDATE SKIP LOCKED` para varias instancias |
+| Outbox (bonus) | **Implementado** en Donaciones (comandos a Logística, notificaciones, eventos a Incentivos) y en Incentivos (avisos de misión cumplida y categoría) | Llevarlo a los eventos de Logística (Mongo: requiere réplica para transacciones) y despachar con `SELECT ... FOR UPDATE SKIP LOCKED` para varias instancias |

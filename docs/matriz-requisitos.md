@@ -80,7 +80,7 @@ parcial · ❌ no implementado (decisión explícita, ver
 | 4 | Rate limiting | `front/limites` (Bucket4j: autenticación 10/min, GPS 60/min, general 300/min) | `LimiteSolicitudesTest`, `LimiteSolicitudesIntegracionTest.elLoginRepetidoDesdeLaMismaIpTermina429` | ✅ |
 | 5 | GraphQL en Logística (filtros dinámicos y selección de campos) | `logistica.graphqls`, `EntregasGraphQl` | `EntregasGraphQlTest.filtraDinamicamenteYDevuelveSoloLosCamposPedidos`, `BuscarEntregasMongoTest` | ✅ |
 | 6 | Bonus: registry + gateway | propuesta en `docs/arquitectura.md` §7 | no implementado | ❌ |
-| 7 | Bonus: Transactional Outbox para eventos de notificación | outbox en Donaciones para **comandos a Logística, notificaciones y eventos a Incentivos** (`PublicadorColasConOutbox` + `DespachadorOutbox`) | `OutboxColasTest`, `OutboxLogisticaTest`, `OutboxTransaccionalJpaTest` | ✅ |
+| 7 | Bonus: Transactional Outbox para eventos de notificación | outbox en Donaciones para **comandos a Logística, notificaciones y eventos a Incentivos**, y en Incentivos para **avisos de misión cumplida y categoría** (`PublicadorColasConOutbox` + `DespachadorOutbox`) | `OutboxIncentivosTest`, `OutboxIncentivosJpaTest`, `OutboxColasTest`, `OutboxLogisticaTest`, `OutboxTransaccionalJpaTest` | ✅ |
 | E | Diagrama de despliegue actual | `docs/diagramas/despliegue.puml` | revisión documental | ✅ |
 
 ## Correcciones de la auditoría, cada una con su prueba de regresión
